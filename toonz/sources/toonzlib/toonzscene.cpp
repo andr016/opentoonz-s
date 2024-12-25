@@ -281,8 +281,7 @@ ToonzScene::ToonzScene()
   m_childStack = new ChildStack(this);
   m_properties = new TSceneProperties();
   m_levelSet   = new TLevelSet();
-  m_project    = new TProject();
-  m_project->addRef();
+  m_project    = std::make_shared<TProject>();
 }
 
 //-----------------------------------------------------------------------------
@@ -292,9 +291,6 @@ ToonzScene::~ToonzScene() {
   delete m_levelSet;
   delete m_childStack;
   delete m_contentHistory;
-
-  assert(m_project);
-  if (m_project) m_project->release();
 }
 
 //-----------------------------------------------------------------------------
@@ -319,19 +315,14 @@ void ToonzScene::clear() {
 
 //-----------------------------------------------------------------------------
 
-void ToonzScene::setProject(TProject *project) {
+void ToonzScene::setProject(std::shared_ptr<TProject> project) {
   assert(project);
-
-  if (project != m_project) {
-    if (project) project->addRef();
-    if (m_project) m_project->release();
-    m_project = project;
-  }
+  m_project = project;
 }
 
 //-----------------------------------------------------------------------------
 
-TProject *ToonzScene::getProject() const { return m_project; }
+std::shared_ptr<TProject> ToonzScene::getProject() const { return m_project; }
 
 //-----------------------------------------------------------------------------
 
@@ -394,11 +385,11 @@ int ToonzScene::loadFrameCount(const TFilePath &fp) {
 void ToonzScene::loadNoResources(const TFilePath &fp) {
   clear();
 
-  TProjectManager *pm    = TProjectManager::instance();
-  TProjectP sceneProject = pm->loadSceneProject(fp);
+  TProjectManager *pm = TProjectManager::instance();
+  auto sceneProject = pm->loadSceneProject(fp);
   if (!sceneProject) return;
 
-  setProject(sceneProject.getPointer());
+  setProject(sceneProject);
 
   loadTnzFile(fp);
   getXsheet()->updateFrameCount();
@@ -999,6 +990,7 @@ static LevelType getLevelType(const TFilePath &fp) {
       ret.m_ltype = OVL_XSHLEVEL;
     break;
 
+  case TFileType::VECTOR_IMAGE:
   case TFileType::VECTOR_LEVEL:
     if (format == "svg") {
       ret.m_vectorNotPli = true;
@@ -1017,6 +1009,12 @@ static LevelType getLevelType(const TFilePath &fp) {
   case TFileType::MESH_LEVEL:
     ret.m_ltype = MESH_XSHLEVEL;
     break;
+
+  case TFileType::META_IMAGE:
+  case TFileType::META_LEVEL:
+    ret.m_ltype = META_XSHLEVEL;
+    break;
+
   default:
     break;
   }
@@ -1188,7 +1186,7 @@ TXshLevel *ToonzScene::loadLevel(const TFilePath &actualPath,
     else {
       const Preferences &prefs = *Preferences::instance();
       int formatIdx            = prefs.matchLevelFormat(
-          levelPath);  // Should I use actualPath here? It's mostly
+                     levelPath);  // Should I use actualPath here? It's mostly
                                   // irrelevant anyway, it's for old tzp/tzu...
       if (formatIdx >= 0) {
         lp->options()   = prefs.levelFormat(formatIdx).m_options;
@@ -1243,7 +1241,7 @@ TXshLevel *ToonzScene::loadLevel(const TFilePath &actualPath,
 //-----------------------------------------------------------------------------
 
 TFilePath ToonzScene::decodeFilePath(const TFilePath &path) const {
-  TProject *project   = getProject();
+  auto project = getProject();
   bool projectIsEmpty = project->getFolderCount() ? false : true;
   TFilePath fp        = path;
 
@@ -1341,7 +1339,7 @@ TFilePath ToonzScene::decodeFilePath(const TFilePath &path) const {
 
 TFilePath ToonzScene::codeFilePath(const TFilePath &path) const {
   TFilePath fp(path);
-  TProject *project = getProject();
+  auto project = getProject();
 
   Preferences::PathAliasPriority priority =
       Preferences::instance()->getPathAliasPriority();
@@ -1384,7 +1382,7 @@ bool ToonzScene::codeFilePathWithSceneFolder(TFilePath &path) const {
 
 TFilePath ToonzScene::getDefaultLevelPath(int levelType,
                                           std::wstring levelName) const {
-  TProject *project = getProject();
+  auto project = getProject();
   assert(project);
   TFilePath levelPath;
   switch (levelType) {
@@ -1400,6 +1398,9 @@ TFilePath ToonzScene::getDefaultLevelPath(int levelType,
     break;
   case TZP_XSHLEVEL:
     levelPath = TFilePath(levelName).withType("tlv");
+    break;
+  case META_XSHLEVEL:
+    levelPath = TFilePath(levelName).withType("tzm");
     break;
   default:
     levelPath = TFilePath(levelName + L"..png");
@@ -1468,7 +1469,7 @@ TFilePath ToonzScene::decodeSavePath(TFilePath path) const {
 //-----------------------------------------------------------------------------
 
 bool ToonzScene::isExternPath(const TFilePath &fp) const {
-  TProject *project = m_project;
+  auto project = m_project;
   assert(project);
   for (int i = 0; i < project->getFolderCount(); i++) {
     if (project->getFolderName(i) == "scenes") continue;

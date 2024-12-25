@@ -146,6 +146,7 @@ if(PLATFORM EQUAL 64)
         cameracapturelevelcontrol.h
         penciltestpopup.h
         navtageditorpopup.h
+        xshbreadcrumbs.h
     )
 else()
     set(MOC_HEADERS
@@ -153,6 +154,7 @@ else()
         cameracapturelevelcontrol_qt.h
         penciltestpopup_qt.h
         navtageditorpopup.h
+        xshbreadcrumbs.h
     )
 endif()
 
@@ -404,6 +406,7 @@ if(PLATFORM EQUAL 64)
         cameracapturelevelcontrol.cpp
         penciltestpopup.cpp
         navtageditorpopup.cpp
+        xshbreadcrumbs.cpp
     )
 else()
     set(SOURCES
@@ -411,6 +414,7 @@ else()
         cameracapturelevelcontrol_qt.cpp
         penciltestpopup_qt.cpp
         navtageditorpopup.cpp
+        xshbreadcrumbs.cpp
     )
 endif()
 
@@ -497,6 +501,9 @@ endif()
 
 if(BUILD_ENV_MSVC)
     set(EXTRA_LIBS)
+    if(CMAKE_CXX_FLAGS_DEBUG)
+    target_compile_options(OpenToonz PRIVATE /EHsc) #Enable C++ Exceptions in Debug Mode
+    endif()
     if(PLATFORM EQUAL 64)
         set(EXTRA_LIBS ${EXTRA_LIBS} Qt5::SerialPort ${TURBOJPEG_LIB} ${OpenCV_LIBS})
         if(WITH_CANON)

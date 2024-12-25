@@ -130,8 +130,10 @@ enum PreferencesItemId {
   inputCellsWithoutDoubleClickingEnabled,
   shortcutCommandsWhileRenamingCellEnabled,
   showXSheetToolbar,
+  showXsheetBreadcrumbs,
   expandFunctionHeader,
   showColumnNumbers,
+  unifyColumnVisibilityToggles,
   parentColorsInXsheetColumn,
   highlightLineEverySecond,
   syncLevelRenumberWithXsheet,
@@ -139,6 +141,7 @@ enum PreferencesItemId {
   currentColumnColor,
   levelNameDisplayType,
   showFrameNumberWithLetters,
+  linkColumnNameWithLevel,
 
   //----------
   // Animation

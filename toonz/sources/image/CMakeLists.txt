@@ -26,6 +26,7 @@ set(HEADERS
     mesh/tiio_mesh.h
     exr/tinyexr_otmod.h
     exr/tiio_exr.h
+    tzm/tiio_tzm.h
 )
 
 set(SOURCES
@@ -56,6 +57,7 @@ set(SOURCES
     sprite/tiio_sprite.cpp
     mesh/tiio_mesh.cpp
     exr/tiio_exr.cpp
+    tzm/tiio_tzm.cpp
 )
 
 
@@ -180,6 +182,7 @@ elseif(BUILD_ENV_APPLE)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -F ${OSX_10_6_SDK_PATH}")
     endif()
     set(EXTRA_LIBS
+        Qt5::Widgets
         ${TNZLIBS}
         ${QT_LIB}
         ${CARBON_LIB}

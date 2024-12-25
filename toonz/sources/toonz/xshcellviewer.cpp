@@ -76,7 +76,8 @@
 
 namespace {
 
-const bool checkContainsSingleLevel(TXshColumn *column) {
+const bool checkContainsSingleLevel(TXshColumn *column,
+                                    const std::string &columnName) {
   TXshLevel *level           = nullptr;
   TXshCellColumn *cellColumn = column->getCellColumn();
   if (cellColumn) {
@@ -91,7 +92,9 @@ const bool checkContainsSingleLevel(TXshColumn *column) {
       else if (lvl != level)
         return false;
     }
-    return level != nullptr;
+    // column name should be unspecified or same as the content level
+    return level != nullptr &&
+           (columnName.empty() || level->getName() == to_wstring(columnName));
   }
   return false;
 }
@@ -856,6 +859,26 @@ void RenameCellField::renameCell() {
       // previous frames
       // (when editing not empty column)
       if (xsheet->isColumnEmpty(c)) {
+        // find a level with name same as the column (if the preferences option
+        // is set to do so)
+        if (Preferences::instance()->isLinkColumnNameWithLevelEnabled() &&
+            xsheet->getStageObject(TStageObjectId::ColumnId(c))
+                ->hasSpecifiedName()) {
+          std::string columnName =
+              xsheet->getStageObject(TStageObjectId::ColumnId(c))->getName();
+          TLevelSet *levelSet = scene->getLevelSet();
+          TXshLevel *xl       = levelSet->getLevel(to_wstring(columnName));
+          TXshSimpleLevel *sl = (xl) ? xl->getSimpleLevel() : nullptr;
+          if (sl &&
+              (!sl->isEmpty() || sl->getFirstFid() != TFrameId::NO_FRAME)) {
+            sl->formatFId(fid, tmplFId);
+            cells.append(TXshCell(xl, fid));
+            changed      = true;
+            hasFrameZero = (fid.getNumber() == 0 && xl->getSimpleLevel() &&
+                            xl->getSimpleLevel()->isFid(fid));
+            continue;
+          }
+        }
         cells.append(TXshCell());
         continue;
       }
@@ -1270,10 +1293,16 @@ void CellArea::drawCells(QPainter &p, const QRect toBeUpdated) {
       isPaletteColumn   = column->getPaletteColumn() != 0;
       isSoundTextColumn = column->getSoundTextColumn() != 0;
       if (Preferences::instance()->getLevelNameDisplayType() ==
-          Preferences::ShowLevelNameOnColumnHeader)
+          Preferences::ShowLevelNameOnColumnHeader) {
+        std::string columnName = "";
+        if (col >= 0 && xsh->getStageObject(TStageObjectId::ColumnId(col))
+                            ->hasSpecifiedName())
+          columnName =
+              xsh->getStageObject(TStageObjectId::ColumnId(col))->getName();
         showLevelName =
             (isSoundColumn || isPaletteColumn || isSoundTextColumn ||
-             !checkContainsSingleLevel(column));
+             !checkContainsSingleLevel(column, columnName));
+      }
     }
     // check if the column is reference
     bool isReference = true;
@@ -1412,6 +1441,9 @@ void CellArea::drawExtenderHandles(QPainter &p) {
   // selected cells range
   TCellSelection *cellSelection = m_viewer->getCellSelection();
   if (cellSelection->isEmpty() || m_viewer->areSoundCellsSelected()) return;
+
+  // if the drag move is disabled, the extender handles won't appear
+  if (Preferences::instance()->getDragCellsBehaviour() == 2) return;
 
   int selRow0, selCol0, selRow1, selCol1;
   cellSelection->getSelectedCells(selRow0, selCol0, selRow1, selCol1);
@@ -1935,7 +1967,7 @@ void CellArea::drawLevelCell(QPainter &p, int row, int col, bool isReference,
       p.drawEllipse(markRect);
     }
 
-    QColor levelEndColor = m_viewer->getTextColor();
+    QColor levelEndColor = m_viewer->getLevelEndColor();
     levelEndColor.setAlphaF(0.3);
     p.setPen(levelEndColor);
     p.drawLine(rect.topLeft(), rect.bottomRight());
@@ -2218,7 +2250,7 @@ void CellArea::drawSoundTextCell(QPainter &p, int row, int col) {
 
     drawFrameSeparator(p, row, col, false, heldFrame);
 
-    QColor levelEndColor = m_viewer->getTextColor();
+    QColor levelEndColor = m_viewer->getLevelEndColor();
     levelEndColor.setAlphaF(0.3);
     p.setPen(levelEndColor);
     p.drawLine(rect.topLeft(), rect.bottomRight());
@@ -2423,7 +2455,7 @@ void CellArea::drawSoundTextColumn(QPainter &p, int r0, int r1, int col) {
       TXshCell prevCell;
       if (row > 0) prevCell = xsh->getCell(row - 1, col);
       if (!prevCell.isEmpty()) {
-        QColor levelEndColor = m_viewer->getTextColor();
+        QColor levelEndColor = m_viewer->getLevelEndColor();
         levelEndColor.setAlphaF(0.3);
         p.setPen(levelEndColor);
         p.drawLine(info.rect.topLeft(), info.rect.bottomRight());
@@ -2678,7 +2710,7 @@ void CellArea::drawPaletteCell(QPainter &p, int row, int col,
 
     drawFrameSeparator(p, row, col, false, heldFrame);
 
-    QColor levelEndColor = m_viewer->getTextColor();
+    QColor levelEndColor = m_viewer->getLevelEndColor();
     levelEndColor.setAlphaF(0.3);
     p.setPen(levelEndColor);
     p.drawLine(rect.topLeft(), rect.bottomRight());
@@ -2974,7 +3006,7 @@ void CellArea::drawKeyframe(QPainter &p, const QRect toBeUpdated) {
       int qy   = icon_frameAxis + 12;
       int zig  = 2;
       int qx   = icon_layerAxis + 5;
-      p.setPen(m_viewer->getTextColor());
+      p.setPen(m_viewer->getKeyframeLineColor());
       p.drawLine(o->frameLayerToXY(qy, qx),
                  o->frameLayerToXY(qy + zig, qx - zig));
       while (qy < ymax) {
@@ -2999,7 +3031,7 @@ void CellArea::drawKeyframeLine(QPainter &p, int col,
       keyRect.center() + m_viewer->positionToXY(CellPosition(rows.from(), col));
   QPoint end =
       keyRect.center() + m_viewer->positionToXY(CellPosition(rows.to(), col));
-  p.setPen(m_viewer->getTextColor());
+  p.setPen(m_viewer->getKeyframeLineColor());
   p.drawLine(QLine(begin, end));
 }
 
@@ -3332,7 +3364,7 @@ void CellArea::mousePressEvent(QMouseEvent *event) {
       if (TCellKeyframeSelection *cellKeyframeSelection =
               dynamic_cast<TCellKeyframeSelection *>(selection))
         setDragTool(XsheetGUI::DragTool::makeCellKeyframeMoverTool(m_viewer));
-      else
+      else if (Preferences::instance()->getDragCellsBehaviour() != 2)
         setDragTool(XsheetGUI::DragTool::makeLevelMoverTool(m_viewer));
     } else {
       m_viewer->getKeyframeSelection()->selectNone();
@@ -3490,7 +3522,7 @@ void CellArea::mouseMoveEvent(QMouseEvent *event) {
 //-----------------------------------------------------------------------------
 
 void CellArea::mouseReleaseEvent(QMouseEvent *event) {
-  m_viewer->setQtModifiers(0);
+  m_viewer->setQtModifiers(Qt::KeyboardModifiers());
   m_isMousePressed = false;
   m_viewer->stopAutoPan();
   m_isPanning = false;

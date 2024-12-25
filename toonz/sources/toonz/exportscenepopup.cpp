@@ -122,10 +122,8 @@ ExportSceneDvDirModelFileFolderNode::createExposeSceneNode(
 // ExportSceneDvDirModelProjectNode
 
 QPixmap ExportSceneDvDirModelProjectNode::getPixmap(bool isOpen) const {
-  static QPixmap openProjectPixmap(recolorPixmap(
-      svgToPixmap(getIconThemePath("actions/18/folder_project_on.svg"))));
-  static QPixmap closeProjectPixmap(recolorPixmap(
-      svgToPixmap(getIconThemePath("actions/18/folder_project.svg"))));
+  static QPixmap openProjectPixmap(generateIconPixmap("folder_project_on"));
+  static QPixmap closeProjectPixmap(generateIconPixmap("folder_project"));
   return isOpen ? openProjectPixmap : closeProjectPixmap;
 }
 
@@ -148,7 +146,7 @@ ExportSceneDvDirModelProjectNode::createExposeSceneNode(DvDirModelNode *parent,
     node = new ExportSceneDvDirModelFileFolderNode(parent, path);
     if (path.getName().find("_files") == std::string::npos)
       node->enableRename(true);
-    TProject *project = new TProject();
+    auto project = std::make_shared<TProject>();
     project->load(
         TProjectManager::instance()->projectFolderToProjectPath(getPath()));
     int k = project->getFolderIndexFromPath(node->getPath());
@@ -193,8 +191,8 @@ void ExportSceneDvDirModelRootNode::refreshChildren() {
     ExportSceneDvDirModelSpecialFileFolderNode *projectRootNode =
         new ExportSceneDvDirModelSpecialFileFolderNode(
             this, L"Project root (" + rootDir + L")", projectRoot);
-    projectRootNode->setPixmap(QPixmap(recolorPixmap(
-        svgToPixmap(getIconThemePath("actions/18/folder_project_root.svg")))));
+    projectRootNode->setPixmap(
+        QPixmap(generateIconPixmap("folder_project_root")));
     m_projectRootNodes.push_back(projectRootNode);
     addChild(projectRootNode);
   }
@@ -701,9 +699,9 @@ TFilePath ExportScenePopup::createNewProject() {
     return TFilePath();
   }
 
-  TProject *project = new TProject();
+  auto project = std::make_shared<TProject>();
 
-  TProjectP currentProject = pm->getCurrentProject();
+  auto currentProject = pm->getCurrentProject();
   assert(currentProject);
   int i;
   for (i = 0; i < (int)currentProject->getFolderCount(); i++)

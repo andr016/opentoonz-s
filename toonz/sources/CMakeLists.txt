@@ -146,6 +146,21 @@ elseif(BUILD_ENV_MSVC OR BUILD_ENV_UNIXLIKE)
     set(THIRDPARTY_LIBS_HINTS ${SDKROOT})
 endif()
 
+if(BUILD_ENV_MSVC)
+    # configure the third party libs (only once) to avoid manual copies
+    message(STATUS "configure the third party libs")
+    if(NOT EXISTS"${SDKROOT}/libpng-1.6.21")
+        file(COPY "${SDKROOT}/libpng-1.6.21/scripts/pnglibconf.h.prebuilt" DESTINATION "${SDKROOT}/libpng-1.6.21")
+        file(RENAME "${SDKROOT}/libpng-1.6.21/pnglibconf.h.prebuilt" "${SDKROOT}/libpng-1.6.21/pnglibconf.h")
+    endif()
+    if(NOT EXISTS "${SDKROOT}/tiff-4.0.3/libtiff/tif_config.h")
+        file(COPY_FILE "${SDKROOT}/tiff-4.0.3/libtiff/tif_config.vc.h" "${SDKROOT}/tiff-4.0.3/libtiff/tif_config.h")
+    endif()
+    if(NOT EXISTS "${SDKROOT}/tiff-4.0.3/libtiff/tiffconf.h")
+        file(COPY_FILE "${SDKROOT}/tiff-4.0.3/libtiff/tiffconf.vc.h" "${SDKROOT}/tiff-4.0.3/libtiff/tiffconf.h")
+    endif()
+endif()
+
 message(STATUS "Thirdpary Library Search path:" ${THIRDPARTY_LIBS_HINTS})
 
 if(BUILD_ENV_MSVC)
@@ -476,7 +491,7 @@ elseif(BUILD_ENV_UNIXLIKE)
     find_package(LZO REQUIRED)
     message("LZO:" ${LZO_INCLUDE_DIR})
 
-    if(HAIKU)
+    if(BUILD_TARGET_BSD OR HAIKU)
         find_library(EXECINFO_LIBRARY execinfo)
     endif()
     find_library(PTHREAD_LIBRARY pthread)
@@ -527,19 +542,24 @@ include_directories(
 )
 
 if(BUILD_ENV_MSVC OR BUILD_ENV_APPLE)
-    find_path(
-        BOOST_ROOT
-            include/boost
-            boost
-        HINTS
-            ${THIRDPARTY_LIBS_HINTS}
-        PATH_SUFFIXES
-            boost/boost_1_75_0/
-            boost/boost_1_74_0/
-            boost/boost_1_73_0/
-            boost/boost_1_72_0/
-    )
-    find_package(Boost 1.55 REQUIRED)
+       	if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.30)
+		set(BOOST_DIR ${BOOST_ROOT})
+		find_package(Boost 1.55 REQUIRED)
+	else()# Cmake version below 3.30
+		find_path(
+			BOOST_ROOT
+       			     	include/boost
+            			boost
+	        	HINTS
+		            	${THIRDPARTY_LIBS_HINTS}
+        		PATH_SUFFIXES
+	            		boost/boost_1_75_0/
+	            		boost/boost_1_74_0/
+        		    	boost/boost_1_73_0/
+	        	    	boost/boost_1_72_0/
+		)
+		find_package(Boost 1.55 REQUIRED)
+	endif()
 else()
     find_package(Boost)
 endif()
