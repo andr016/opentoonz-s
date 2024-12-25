@@ -302,13 +302,6 @@ bool TXsheet::setCell(int row, int col, const TXshCell &cell) {
   else if (row >= m_imp->m_frameCount)
     m_imp->m_frameCount = row + 1;
 
-  // set the level name to the column
-  if (wasColumnEmpty && cellColumn && !cell.isEmpty() &&
-      Preferences::instance()->isLinkColumnNameWithLevelEnabled()) {
-    getStageObject(TStageObjectId::ColumnId(col))
-        ->setName(to_string(cell.m_level->getName()));
-  }
-
   TNotifier::instance()->notify(TXsheetChange());
 
   return true;
@@ -392,14 +385,6 @@ bool TXsheet::setCells(int row, int col, int rowCount, const TXshCell cells[]) {
     if (oldColRowCount == m_imp->m_frameCount &&
         newColRowCount < m_imp->m_frameCount)
       updateFrameCount();
-  }
-  row + 1;
-
-  // set the level name to the column
-  if (wasColumnEmpty && i < rowCount &&
-      Preferences::instance()->isLinkColumnNameWithLevelEnabled()) {
-    getStageObject(TStageObjectId::ColumnId(col))
-        ->setName(to_string(cells[i].m_level->getName()));
   }
 
   return true;

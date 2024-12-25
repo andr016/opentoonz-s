@@ -3,9 +3,30 @@
 #include "toonz/childstack.h"
 #include "toonz/toonzscene.h"
 #include "toonz/txsheet.h"
+#include "toonz/txshchildlevel.h"
 #include "toonz/txshcell.h"
 #include "toonz/txshleveltypes.h"
 #include "toonz/scenefx.h"
+
+//=============================================================================
+//! The Node class is a container of element necessary to define a sub-xsheet.
+/*!
+   The class contain a pointer to \b TXsheet \b m_xsheet, two integer to
+   identify column
+   \b m_col and row \b m_row, a \b TXshChildLevelP \b m_cl and a bool \b
+   m_justCreated.
+*/
+
+class ChildStack::Node {
+public:
+  TXsheet *m_xsheet;
+  int m_row, m_col;
+  std::map<int, int> m_rowTable;
+  TXshChildLevelP m_cl;
+  bool m_justCreated;
+  Node()
+      : m_xsheet(0), m_row(0), m_col(0), m_rowTable(), m_justCreated(false) {}
+};
 
 //=============================================================================
 // ChildStack
@@ -43,7 +64,7 @@ bool ChildStack::openChild(int row, int col) {
     childLevel = cell.m_level->getChildLevel();
   if (!childLevel) return false;
   TXsheet *childXsheet = childLevel->getXsheet();
-  AncestorNode *node   = new AncestorNode();
+  Node *node           = new Node();
   node->m_row          = row;
   node->m_col          = col;
   node->m_xsheet       = m_xsheet;
@@ -74,7 +95,7 @@ bool ChildStack::closeChild(int &row, int &col) {
       ->updateFrameCount();  // non dovrebbe essere necessario, ma non si sa mai
   int childFrameCount = childXsh->getFrameCount();
 
-  AncestorNode *node = m_stack.back();
+  Node *node = m_stack.back();
   m_stack.pop_back();
 
   TXsheet *parentXsh = node->m_xsheet;
@@ -147,7 +168,7 @@ bool ChildStack::getAncestorAffine(TAffine &aff, int row) const {
     if (it == m_stack[i]->m_rowTable.end()) break;
 
     row        = it->second;
-    AncestorNode *node = m_stack[i];
+    Node *node = m_stack[i];
     TAffine aff2;
     if (!getColumnPlacement(aff2, node->m_xsheet, row, node->m_col, false))
       return false;
@@ -155,12 +176,4 @@ bool ChildStack::getAncestorAffine(TAffine &aff, int row) const {
     i--;
   }
   return true;
-}
-
-//-----------------------------------------------------------------------------
-
-AncestorNode *ChildStack::getAncestorInfo(int ancestorDepth) {
-  if (ancestorDepth < 0 || ancestorDepth >= m_stack.size()) return nullptr;
-
-  return m_stack[ancestorDepth];
 }

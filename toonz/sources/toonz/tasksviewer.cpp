@@ -1121,32 +1121,49 @@ QVariant TaskTreeModel::data(const QModelIndex &index, int role) const {
       bool sourceFileIsCLN = (t->m_taskFilePath.getType() == "cln");
       switch (t->m_status) {
       case Suspended:
-        return createQIcon(t->m_isComposerTask
-                               ? "task_render_suspended"
-                               : (sourceFileIsCLN ? "task_cln_suspended"
-                                                  : "task_cleanup_suspended"));
+        return QIcon(
+            t->m_isComposerTask
+                ? getIconThemePath("actions/35/task_render_suspended.svg")
+                : (sourceFileIsCLN
+                       ? getIconThemePath("actions/35/task_cln_suspended.svg")
+                       : getIconThemePath(
+                             "actions/35/task_cleanup_suspended.svg")));
       case Waiting:
-        return createQIcon(t->m_isComposerTask
-                               ? "task_render_completed_with_errors"
-                               : (sourceFileIsCLN
-                                      ? "task_cln_completed_with_errors"
-                                      : "task_cleanup_completed_with_errors"));
+        return QIcon(
+            t->m_isComposerTask
+                ? getIconThemePath(
+                      "actions/35/task_render_completed_with_errors.svg")
+                : (sourceFileIsCLN
+                       ? getIconThemePath(
+                             "actions/35/task_cln_completed_with_errors.svg")
+                       : getIconThemePath(
+                             "actions/35/"
+                             "task_cleanup_completed_with_errors.svg")));
       case Running:
-        return createQIcon(t->m_isComposerTask
-                               ? "task_render_computing"
-                               : (sourceFileIsCLN ? "task_cln_computing"
-                                                  : "task_cleanup_computing"));
+        return QIcon(
+            t->m_isComposerTask
+                ? getIconThemePath("actions/35/task_render_computing.svg")
+                : (sourceFileIsCLN
+                       ? getIconThemePath("actions/35/task_cln_computing.svg")
+                       : getIconThemePath(
+                             "actions/35/task_cleanup_computing.svg")));
       case Completed:
-        return createQIcon(t->m_isComposerTask
-                               ? "task_render_completed"
-                               : (sourceFileIsCLN ? "task_cln_completed"
-                                                  : "task_cleanup_completed"));
+        return QIcon(
+            t->m_isComposerTask
+                ? getIconThemePath("actions/35/task_render_completed.svg")
+                : (sourceFileIsCLN
+                       ? getIconThemePath("actions/35/task_cln_completed.svg")
+                       : getIconThemePath(
+                             "actions/35/task_cleanup_completed.svg")));
       case Aborted:
       case TaskUnknown:
-        return createQIcon(t->m_isComposerTask
-                               ? "task_render_failed"
-                               : (sourceFileIsCLN ? "task_cln_failed"
-                                                  : "task_cleanup_failed"));
+        return QIcon(
+            t->m_isComposerTask
+                ? getIconThemePath("actions/35/task_render_failed.svg")
+                : (sourceFileIsCLN
+                       ? getIconThemePath("actions/35/task_cln_failed.svg")
+                       : getIconThemePath(
+                             "actions/35/task_cleanup_failed.svg")));
       default:
         assert(false);
       }

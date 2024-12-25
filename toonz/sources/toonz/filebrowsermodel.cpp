@@ -353,8 +353,10 @@ DvDirModelNode *DvDirModelFileFolderNode::getNodeByPath(const TFilePath &path) {
 //-----------------------------------------------------------------------------
 
 QPixmap DvDirModelFileFolderNode::getPixmap(bool isOpen) const {
-  static QPixmap openFolderPixmap  = generateIconPixmap("folder_on");
-  static QPixmap closeFolderPixmap = generateIconPixmap("folder");
+  static QPixmap openFolderPixmap(
+      svgToPixmap(getIconThemePath("actions/18/folder_on.svg")));
+  static QPixmap closeFolderPixmap(
+      svgToPixmap(getIconThemePath("actions/18/folder.svg")));
   return isOpen ? openFolderPixmap : closeFolderPixmap;
 }
 
@@ -504,8 +506,10 @@ DvDirModelNode *DvDirVersionControlNode::makeChild(std::wstring name) {
 //-----------------------------------------------------------------------------
 
 QPixmap DvDirVersionControlNode::getPixmap(bool isOpen) const {
-  static QPixmap openFolderPixmap(generateIconPixmap("folder_on"));
-  static QPixmap closeFolderPixmap(generateIconPixmap("folder"));
+  static QPixmap openFolderPixmap(
+      svgToPixmap(getIconThemePath("actions/18/folder_on.svg")));
+  static QPixmap closeFolderPixmap(
+      svgToPixmap(getIconThemePath("actions/18/folder.svg")));
   static QPixmap openMissingPixmap(
       svgToPixmap(":Resources/vcfolder_mis_open.svg"));
   static QPixmap closeMissingPixmap(
@@ -706,7 +710,7 @@ void DvDirVersionControlProjectNode::refreshChildren() {
   DvDirModelFileFolderNode::refreshChildren();
   int i;
   TProjectManager *pm = TProjectManager::instance();
-  auto project = std::make_shared<TProject>();
+  TProject *project   = new TProject();
   project->load(getProjectPath());
   for (i = 0; i < getChildCount(); i++) {
     DvDirModelFileFolderNode *node =
@@ -716,6 +720,7 @@ void DvDirVersionControlProjectNode::refreshChildren() {
       node->setIsProjectFolder(k >= 0);
     }
   }
+  delete project;
 }
 
 //-----------------------------------------------------------------------------
@@ -724,7 +729,7 @@ void DvDirVersionControlProjectNode::getChildrenNames(
     std::vector<std::wstring> &names) const {
   DvDirVersionControlNode::getChildrenNames(names);
   TProjectManager *pm = TProjectManager::instance();
-  auto project = std::make_shared<TProject>();
+  TProject *project   = new TProject();
   project->load(getProjectPath());
   int i;
   for (i = 0; i < project->getFolderCount(); i++) {
@@ -735,6 +740,7 @@ void DvDirVersionControlProjectNode::getChildrenNames(
       names.push_back(L"+" + ::to_wstring(folderName));
     }
   }
+  delete project;
 }
 
 //=============================================================================
@@ -776,8 +782,10 @@ void DvDirModelProjectNode::makeCurrent() {
 //-----------------------------------------------------------------------------
 
 QPixmap DvDirModelProjectNode::getPixmap(bool isOpen) const {
-  static QPixmap openProjectPixmap  = generateIconPixmap("folder_project_on");
-  static QPixmap closeProjectPixmap = generateIconPixmap("folder_project");
+  static QPixmap openProjectPixmap(
+      svgToPixmap(getIconThemePath("actions/18/folder_project_on.svg")));
+  static QPixmap closeProjectPixmap(
+      svgToPixmap(getIconThemePath("actions/18/folder_project.svg")));
   return isOpen ? openProjectPixmap : closeProjectPixmap;
 }
 
@@ -787,7 +795,7 @@ void DvDirModelProjectNode::refreshChildren() {
   DvDirModelFileFolderNode::refreshChildren();
   int i;
   TProjectManager *pm = TProjectManager::instance();
-  auto project = std::make_shared<TProject>();
+  TProject *project   = new TProject();
   project->load(getProjectPath());
   for (i = 0; i < getChildCount(); i++) {
     DvDirModelFileFolderNode *node =
@@ -797,6 +805,7 @@ void DvDirModelProjectNode::refreshChildren() {
       node->setIsProjectFolder(k >= 0);
     }
   }
+  delete project;
 }
 
 //-----------------------------------------------------------------------------
@@ -805,7 +814,7 @@ void DvDirModelProjectNode::getChildrenNames(
     std::vector<std::wstring> &names) const {
   DvDirModelFileFolderNode::getChildrenNames(names);
   TProjectManager *pm = TProjectManager::instance();
-  auto project = std::make_shared<TProject>();
+  TProject *project   = new TProject();
   project->load(getProjectPath());
   int i;
   for (i = 0; i < project->getFolderCount(); i++) {
@@ -816,6 +825,7 @@ void DvDirModelProjectNode::getChildrenNames(
       names.push_back(L"+" + ::to_wstring(folderName));
     }
   }
+  delete project;
 }
 
 //-----------------------------------------------------------------------------
@@ -823,11 +833,12 @@ void DvDirModelProjectNode::getChildrenNames(
 DvDirModelNode *DvDirModelProjectNode::makeChild(std::wstring name) {
   if (name != L"" && name[0] == L'+') {
     TProjectManager *pm = TProjectManager::instance();
-    auto project = std::make_shared<TProject>();
+    TProject *project   = new TProject();
     project->load(getProjectPath());
     std::string folderName = ::to_string(name.substr(1));
     TFilePath folderPath   = project->getFolder(folderName);
     DvDirModelNode *node = new DvDirModelFileFolderNode(this, name, folderPath);
+    delete project;
     return node;
   } else
     return DvDirModelFileFolderNode::makeChild(name);
@@ -855,8 +866,10 @@ void DvDirModelDayNode::visualizeContent(FileBrowser *browser) {
 //-----------------------------------------------------------------------------
 
 QPixmap DvDirModelDayNode::getPixmap(bool isOpen) const {
-  static QPixmap openFolderPixmap  = generateIconPixmap("folder_on");
-  static QPixmap closeFolderPixmap = generateIconPixmap("folder");
+  static QPixmap openFolderPixmap(
+      svgToPixmap(getIconThemePath("actions/18/folder_on.svg")));
+  static QPixmap closeFolderPixmap(
+      svgToPixmap(getIconThemePath("actions/18/folder.svg")));
   return isOpen ? openFolderPixmap : closeFolderPixmap;
 }
 
@@ -970,7 +983,7 @@ void DvDirModelNetworkNode::refreshChildren() {
     err = WNetEnumResource(enumHandle, &count, buffer, &bufferSize);
 
     if (err == NO_ERROR) {
-      for (DWORD i = 0; i < count; ++i) {
+      for (int i = 0; i < count; ++i) {
         // Only list disk-type devices - in any case, the remote (UNC) name
         // should exist
         if (buffer[i].dwType == RESOURCETYPE_DISK && buffer[i].lpRemoteName) {
@@ -1059,19 +1072,22 @@ void DvDirModelRootNode::refreshChildren() {
     DvDirModelSpecialFileFolderNode *child;
     child = new DvDirModelSpecialFileFolderNode(this, L"My Documents",
                                                 getMyDocumentsPath());
-    child->setPixmap(generateIconPixmap("my_documents"));
+    child->setPixmap(recolorPixmap(
+        svgToPixmap(getIconThemePath("actions/16/my_documents.svg"))));
     m_specialNodes.push_back(child);
     addChild(child);
 
     child =
         new DvDirModelSpecialFileFolderNode(this, L"Desktop", getDesktopPath());
-    child->setPixmap(generateIconPixmap("desktop"));
+    child->setPixmap(
+        recolorPixmap(svgToPixmap(getIconThemePath("actions/16/desktop.svg"))));
     m_specialNodes.push_back(child);
     addChild(child);
 
     child = new DvDirModelSpecialFileFolderNode(
         this, L"Library", ToonzFolder::getLibraryFolder());
-    child->setPixmap(generateIconPixmap("library"));
+    child->setPixmap(
+        recolorPixmap(svgToPixmap(getIconThemePath("actions/16/library.svg"))));
     m_specialNodes.push_back(child);
     addChild(child);
 
@@ -1088,8 +1104,8 @@ void DvDirModelRootNode::refreshChildren() {
       DvDirModelSpecialFileFolderNode *projectRootNode =
           new DvDirModelSpecialFileFolderNode(
               this, L"Project root (" + roothDir + L")", projectRoot);
-      projectRootNode->setPixmap(
-          QPixmap(generateIconPixmap("folder_project_root")));
+      projectRootNode->setPixmap(QPixmap(recolorPixmap(svgToPixmap(
+          getIconThemePath("actions/18/folder_project_root.svg")))));
       m_projectRootNodes.push_back(projectRootNode);
       addChild(projectRootNode);
     }

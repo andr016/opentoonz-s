@@ -25,6 +25,7 @@
 #include "tundo.h"
 #include "tconvert.h"
 
+#include "../toonz/menubarcommandids.h"
 #include "historytypes.h"
 
 // Qt includes
@@ -499,14 +500,14 @@ void TStyleSelection::enableCommands() {
     enableCommand(this, MI_PasteNames, &TStyleSelection::pasteStylesName);
 
     // available only for level palette
-    if (m_paletteHandle->getPalette()->getGlobalName().empty()) {
+    if (m_paletteHandle->getPalette()->getGlobalName() == L"") {
+      enableCommand(this, MI_GetColorFromStudioPalette,
+                    &TStyleSelection::getBackOriginalStyle);
       enableCommand(this, MI_ToggleLinkToStudioPalette,
                     &TStyleSelection::toggleLink);
+      enableCommand(this, MI_RemoveReferenceToStudioPalette,
+                    &TStyleSelection::removeLink);
     }
-    enableCommand(this, MI_GetColorFromStudioPalette,
-                  &TStyleSelection::getBackOriginalStyle);
-    enableCommand(this, MI_RemoveReferenceToStudioPalette,
-                  &TStyleSelection::removeLink);
   }
   enableCommand(this, MI_Clear, &TStyleSelection::deleteStyles);
   enableCommand(this, MI_EraseUnusedStyles, &TStyleSelection::eraseUnusedStyle);
@@ -1579,13 +1580,11 @@ class UndoRemoveLink final : public TUndo {
     bool m_oldEdittedFlag;
   };
   std::vector<ColorStyleData> m_styles;
-  bool m_isStudioPalette;
 
 public:
   UndoRemoveLink(TPaletteHandle *paletteHandle, int pageIndex)
       : m_paletteHandle(paletteHandle), m_pageIndex(pageIndex) {
-    m_palette         = m_paletteHandle->getPalette();
-    m_isStudioPalette = !m_palette->getGlobalName().empty();
+    m_palette = m_paletteHandle->getPalette();
   }
 
   ~UndoRemoveLink() {}
@@ -1620,13 +1619,7 @@ public:
     for (i = 0; i < (int)m_styles.size(); i++) {
       ColorStyleData data = m_styles[i];
       TColorStyle *cs     = page->getStyle(data.m_indexInPage);
-      if (m_isStudioPalette) {
-        int styleId = page->getStyleId(m_styles[i].m_indexInPage);
-        std::wstring gname =
-            L"-" + m_palette->getGlobalName() + L"-" + std::to_wstring(styleId);
-        cs->setGlobalName(gname);
-      } else
-        cs->setGlobalName(L"");
+      cs->setGlobalName(L"");
       cs->setOriginalName(L"");
       cs->setIsEditedFlag(false);
     }
@@ -1636,7 +1629,7 @@ public:
   int getSize() const override { return sizeof(*this); }
 
   QString getHistoryString() override {
-    return QObject::tr("Remove Reference in Palette : %1")
+    return QObject::tr("Remove Reference  in Palette : %1")
         .arg(QString::fromStdWString(m_palette->getPaletteName()));
   }
   int getHistoryType() override { return HistoryType::Palette; }
@@ -1644,9 +1637,7 @@ public:
 
 //-----------------------------------------------------------------------------
 /*! remove link from studio palette. Delete the global and the original names.
- * return true if something changed.
- * If the target palette is the studio palette, set the global name and make
- * the styles "link parent".
+ * return true if something changed
  */
 void TStyleSelection::removeLink() {
   TPalette *palette = getPalette();
@@ -1658,7 +1649,6 @@ void TStyleSelection::removeLink() {
   assert(page);
 
   bool somethingChanged = false;
-  bool isStudioPalette  = !palette->getGlobalName().empty();
 
   UndoRemoveLink *undo = new UndoRemoveLink(m_paletteHandle, m_pageIndex);
 
@@ -1667,17 +1657,7 @@ void TStyleSelection::removeLink() {
     TColorStyle *cs = page->getStyle(*it);
     assert(cs);
 
-    if (isStudioPalette && !cs->getOriginalName().empty()) {
-      undo->setColorStyle(*it, cs);
-      int styleId = page->getStyleId(*it);
-      std::wstring gname =
-          L"-" + palette->getGlobalName() + L"-" + std::to_wstring(styleId);
-      cs->setGlobalName(gname);
-      cs->setOriginalName(L"");
-      cs->setIsEditedFlag(false);
-      somethingChanged = true;
-    } else if (!isStudioPalette &&
-               (cs->getGlobalName() != L"" || cs->getOriginalName() != L"")) {
+    if (cs->getGlobalName() != L"" || cs->getOriginalName() != L"") {
       undo->setColorStyle(*it, cs);
 
       cs->setGlobalName(L"");
@@ -1801,8 +1781,6 @@ void TStyleSelection::getBackOriginalStyle() {
 
     // if the style has no link
     if (gname == L"") continue;
-    // if the style is link parent
-    if (cs->getOriginalName().empty()) continue;
 
     // Find the palette from the table
     int k = gname.find_first_of(L'-', 1);
@@ -1857,8 +1835,7 @@ void TStyleSelection::getBackOriginalStyle() {
 }
 
 //-----------------------------------------------------------------------------
-/*! return true if there is at least one linked style in the selection.
-    link parent styles are not counted
+/*! return true if there is at least one linked style in the selection
  */
 
 bool TStyleSelection::hasLinkedStyle() {
@@ -1869,18 +1846,13 @@ bool TStyleSelection::hasLinkedStyle() {
   TPalette::Page *page = palette->getPage(m_pageIndex);
   assert(page);
 
-  bool isStudioPalette = palette->getGlobalName() != L"";
-
   // for each selected style
   for (std::set<int>::iterator it = m_styleIndicesInPage.begin();
        it != m_styleIndicesInPage.end(); ++it) {
     TColorStyle *cs    = page->getStyle(*it);
     std::wstring gname = cs->getGlobalName();
     // if the style has link, return true
-    if (!gname.empty() && (gname[0] == L'+' || gname[0] == L'-') &&
-        !cs->getOriginalName().empty()) {
-      return true;
-    }
+    if (gname != L"" && (gname[0] == L'-' || gname[0] == L'+')) return true;
   }
   return false;
 }

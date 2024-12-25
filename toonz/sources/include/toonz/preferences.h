@@ -390,17 +390,11 @@ public:
   bool isShowXSheetToolbarEnabled() const {
     return getBoolValue(showXSheetToolbar);
   }
-  bool isShowXsheetBreadcrumbsEnabled() const {
-    return getBoolValue(showXsheetBreadcrumbs);
-  }
   bool isExpandFunctionHeaderEnabled() const {
     return getBoolValue(expandFunctionHeader);
   }
   bool isShowColumnNumbersEnabled() const {
     return getBoolValue(showColumnNumbers);
-  }
-  bool isUnifyColumnVisibilityTogglesEnabled() const {
-    return getBoolValue(unifyColumnVisibilityToggles);
   }
   bool isParentColorsInXsheetColumnEnabled() const {
     return getBoolValue(parentColorsInXsheetColumn);
@@ -423,9 +417,6 @@ public:
   }
   bool isShowFrameNumberWithLettersEnabled() const {
     return getBoolValue(showFrameNumberWithLetters);
-  }
-  bool isLinkColumnNameWithLevelEnabled() const {
-    return getBoolValue(linkColumnNameWithLevel);
   }
 
   // Animation  tab

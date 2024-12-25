@@ -16,7 +16,7 @@
 #undef TFARMAPI
 #endif
 
-#ifdef _WIN32
+#ifdef WIN32
 #ifdef TFARM_EXPORTS
 #define TFARMAPI __declspec(dllexport)
 #else

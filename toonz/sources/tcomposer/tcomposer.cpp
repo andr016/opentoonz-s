@@ -3,6 +3,9 @@
 #define _CRT_SECURE_NO_WARNINGS (1)   // Warning treated as errors
 #define _CRT_SECURE_NO_DEPRECATE (1)  // use of fopen deprecated
 
+// Tnz includes (-.-')
+#include "../toonz/tapp.h"
+
 // TFarmController includes
 #include "tfarmcontroller.h"
 
@@ -811,9 +814,10 @@ int main(int argc, char *argv[]) {
     msg = "Loading " + srcFilePath.getName();
     cout << endl << msg << endl;
     m_userLog->info(msg);
+    TProjectManager *pm = TProjectManager::instance();
     // pm->enableTabMode(true);
 
-    auto project = TProjectManager::instance()->loadSceneProject(srcFilePath);
+    TProjectP project = pm->loadSceneProject(srcFilePath);
     if (!project) {
       msg = "Couldn't find the project";  //+ project->getName().getName();
       cerr << msg << endl;

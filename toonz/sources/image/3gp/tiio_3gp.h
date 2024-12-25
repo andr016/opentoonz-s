@@ -7,12 +7,6 @@
 #include "tiio_3gp_proxy.h"
 #else
 
-// Toonz includes
-#include "tlevel_io.h"
-#include "tthreadmessage.h"
-#include "tcommon.h"
-
-// Windows include
 #include <windows.h>
 
 namespace QuickTime {
@@ -41,6 +35,9 @@ namespace QuickTime {
 #undef QT_int_fast16_t
 #undef QT_uint_fast16_t
 }
+
+#include "tlevel_io.h"
+#include "tthreadmessage.h"
 
 using namespace QuickTime;
 

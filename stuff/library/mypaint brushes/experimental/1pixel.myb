@@ -179,7 +179,7 @@
             "inputs": {}
         }, 
         "radius_logarithmic": {
-            "base_value": 0.0, 
+            "base_value": -0.58, 
             "inputs": {
                 "speed1": [
                     [

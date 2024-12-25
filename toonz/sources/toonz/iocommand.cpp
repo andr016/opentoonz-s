@@ -22,7 +22,6 @@
 #include "xdtsio.h"
 #include "expressionreferencemanager.h"
 #include "levelcommand.h"
-#include "columncommand.h"
 
 // TnzTools includes
 #include "tools/toolhandle.h"
@@ -784,7 +783,7 @@ void ChildLevelResourceImporter::process(TXshSoundLevel *sl) {
 TXshLevel *loadChildLevel(ToonzScene *parentScene, TFilePath actualPath,
                           int row, int &col,
                           ResourceImportDialog &importStrategy) {
-  auto project = TProjectManager::instance()->loadSceneProject(actualPath);
+  TProjectP project = TProjectManager::instance()->loadSceneProject(actualPath);
 
   // In Tab mode we don't need the project. Otherwise if it is not available
   // we must exit
@@ -793,7 +792,7 @@ TXshLevel *loadChildLevel(ToonzScene *parentScene, TFilePath actualPath,
   // load the subxsheet
   ToonzScene scene;
   scene.loadTnzFile(actualPath);
-  scene.setProject(project);
+  scene.setProject(project.getPointer());
   std::wstring subSceneName = actualPath.getWideName();
 
   // camera settings. get the child camera ...
@@ -926,8 +925,7 @@ TXshLevel *loadLevel(ToonzScene *scene,
       std::string format = actualPath.getType();
       if (format == "tzp" || format == "tzu") convertingPopup->show();
 
-      // SVGs are treated as PLI. Ignore the fIds lists
-      if (format != "svg" && fIds.size() != 0 && doesFileActuallyExist)
+      if (fIds.size() != 0 && doesFileActuallyExist)
         xl = scene->loadLevel(actualPath, rd.m_options ? &*rd.m_options : 0,
                               levelName, fIds);
       else
@@ -1202,6 +1200,7 @@ inline TPaletteP dirtyWhite(const TPaletteP &plt) {
   return out;
 }
 
+//---------------------------------------------------------------------------
 }  // namespace
 //---------------------------------------------------------------------------
 
@@ -1517,11 +1516,6 @@ bool IoCmd::saveScene(const TFilePath &path, int flags) {
   CleanupParameters oldCP(*cp);
   cp->assign(&CleanupParameters::GlobalParameters);
 
-  // Must wait for current save to finish, just in case
-  while (TApp::instance()->isSaveInProgress())
-    ;
-
-  TApp::instance()->setSaveInProgress(true);
   try {
     scene->save(scenePath, xsheet);
   } catch (const TSystemException &se) {
@@ -1529,7 +1523,6 @@ bool IoCmd::saveScene(const TFilePath &path, int flags) {
   } catch (...) {
     DVGui::error(QObject::tr("Couldn't save %1").arg(toQString(scenePath)));
   }
-  TApp::instance()->setSaveInProgress(false);
 
   cp->assign(&oldCP);
 
@@ -1590,7 +1583,6 @@ bool IoCmd::saveScene(int flags) {
   } else {
     TFilePath fp = scene->getScenePath();
     // salva la scena con il nome fp. se fp esiste gia' lo sovrascrive
-    // NOTE: saveScene already check saveInProgress
     return saveScene(fp, SILENTLY_OVERWRITE | flags);
   }
 }
@@ -1739,20 +1731,13 @@ bool IoCmd::saveLevel(TXshSimpleLevel *sl) {
 bool IoCmd::saveAll(int flags) {
   // try to save as much as possible
   // if anything is wrong, return false
-  // NOTE: saveScene already check saveInProgress
   bool result = saveScene(flags);
 
   TApp *app         = TApp::instance();
   ToonzScene *scene = app->getCurrentScene()->getScene();
   bool untitled     = scene->isUntitled();
   SceneResources resources(scene, 0);
-  // Must wait for current save to finish, just in case
-  while (TApp::instance()->isSaveInProgress())
-    ;
-
-  TApp::instance()->setSaveInProgress(true);
   resources.save(scene->getScenePath());
-  TApp::instance()->setSaveInProgress(false);
   resources.updatePaths();
 
   // for update title bar
@@ -1773,13 +1758,7 @@ void IoCmd::saveNonSceneFiles() {
   ToonzScene *scene = app->getCurrentScene()->getScene();
   bool untitled     = scene->isUntitled();
   SceneResources resources(scene, 0);
-  // Must wait for current save to finish, just in case
-  while (TApp::instance()->isSaveInProgress())
-    ;
-
-  TApp::instance()->setSaveInProgress(true);
   resources.save(scene->getScenePath());
-  TApp::instance()->setSaveInProgress(false);
   if (untitled) scene->setUntitled();
   resources.updatePaths();
 
@@ -1833,17 +1812,19 @@ bool IoCmd::loadScene(ToonzScene &scene, const TFilePath &scenePath,
   if (!TSystem::doesExistFileOrLevel(scenePath)) return false;
   scene.load(scenePath);
   // import if needed
-  auto currentProject = TProjectManager::instance()->getCurrentProject();
+  TProjectManager *pm      = TProjectManager::instance();
+  TProjectP currentProject = pm->getCurrentProject();
   if (!scene.getProject()) return false;
   if (scene.getProject()->getProjectPath() !=
       currentProject->getProjectPath()) {
     ResourceImportDialog resourceLoader;
     // resourceLoader.setImportEnabled(true);
-    ResourceImporter importer(&scene, currentProject, resourceLoader);
+    ResourceImporter importer(&scene, currentProject.getPointer(),
+                              resourceLoader);
     SceneResources resources(&scene, scene.getXsheet());
     resources.accept(&importer);
     scene.setScenePath(importer.getImportedScenePath());
-    scene.setProject(currentProject);
+    scene.setProject(currentProject.getPointer());
   }
   return true;
 }
@@ -1891,8 +1872,8 @@ bool IoCmd::loadScene(const TFilePath &path, bool updateRecentFile,
       TSystem::removeFileOrLevel(scenePathTemp);
   }
 
-  TProjectManager *pm = TProjectManager::instance();
-  auto sceneProject = pm->loadSceneProject(scenePath);
+  TProjectManager *pm    = TProjectManager::instance();
+  TProjectP sceneProject = pm->loadSceneProject(scenePath);
   if (!sceneProject) {
     QString msg;
     msg = QObject::tr(
@@ -1961,16 +1942,18 @@ bool IoCmd::loadScene(const TFilePath &path, bool updateRecentFile,
       /*-- プログレス表示を行いながらLoad --*/
       scene->load(scenePath);
     // import if needed
-    auto currentProject = TProjectManager::instance()->getCurrentProject();
+    TProjectManager *pm      = TProjectManager::instance();
+    TProjectP currentProject = pm->getCurrentProject();
     if (!scene->getProject() || scene->getProject()->getProjectPath() !=
                                     currentProject->getProjectPath()) {
       ResourceImportDialog resourceLoader;
       // resourceLoader.setImportEnabled(true);
-      ResourceImporter importer(scene, currentProject, resourceLoader);
+      ResourceImporter importer(scene, currentProject.getPointer(),
+                                resourceLoader);
       SceneResources resources(scene, scene->getXsheet());
       resources.accept(&importer);
       scene->setScenePath(importer.getImportedScenePath());
-      scene->setProject(currentProject);
+      scene->setProject(currentProject.getPointer());
     }
     VersionControlManager::instance()->setFrameRange(scene->getLevelSet());
   } catch (...) {
@@ -1983,9 +1966,9 @@ bool IoCmd::loadScene(const TFilePath &path, bool updateRecentFile,
     DVGui::warning(msg);
   }
   printf("%s:%s end load:\n", __FILE__, __FUNCTION__);
-  auto project = scene->getProject();
+  TProject *project = scene->getProject();
   if (!project) {
-    project = std::make_shared<TProject>();
+    project = new TProject();
     project->setFolder("project", scenePath);
     scene->setProject(project);
   }
@@ -2104,11 +2087,6 @@ bool IoCmd::loadScene(const TFilePath &path, bool updateRecentFile,
       app->getCurrentScene()->setDirtyFlag(true);
     }
   }
-
-  // Check if any column has visibility toggles with different states and the
-  // "unify visibility toggles" option is enabled
-  if (Preferences::instance()->isUnifyColumnVisibilityTogglesEnabled())
-    ColumnCmd::unifyColumnVisibilityToggles();
 
   // caching raster levels
   int cacheRasterBehavior =

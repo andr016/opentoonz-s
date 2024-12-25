@@ -120,9 +120,6 @@ set(HEADERS ${MOC_HEADERS}
     ../include/tmeshimage.h
     ../include/tgldisplaylistsmanager.h
     ../include/tversion.h
-    ../include/tstringid.h
-    ../include/tvariant.h
-    ../include/tmetaimage.h
 )
 
 set(SOURCES
@@ -245,9 +242,6 @@ set(SOURCES
     ../common/tmeshimage/tmeshimage.cpp
     ../common/tmsgcore.cpp
     ../common/tvrender/tfont_qt.cpp
-    ../common/tmetaimage/tmetaimage.cpp
-    ../common/tstringid.cpp
-    ../common/tvariant.cpp
 )
 
 if(BUILD_TARGET_WIN)
@@ -288,13 +282,10 @@ add_definitions(
     -DTSOUND_EXPORTS
     -DTIMAGE_IO_EXPORTS
     -DTRASTERIMAGE_EXPORTS
-    -DTMETAIMAGE_EXPORTS
     -DTVRENDER_EXPORTS
     -DTFLASH_EXPORTS
     -DTROP_EXPORTS
     -DTSTREAM_EXPORTS
-    -DTSTRINGID_EXPORTS
-    -DTVARIANT_EXPORTS
 )
 
 if(BUILD_TARGET_WIN)

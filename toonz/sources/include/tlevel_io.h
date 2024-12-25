@@ -288,9 +288,6 @@ inline bool isMultipleFrameType(const TFilePath &fp) {
 
 inline bool doesSupportRandomAccess(const TFilePath &fp,
                                     bool isToonzOutput = false) {
-  const std::string &type = fp.getType();
-  if (type == "pli") return false;
-
   return (fp.getDots() == "..") || (isToonzOutput && fp.getType() == "mov");
 }
 

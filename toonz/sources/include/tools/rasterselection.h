@@ -55,10 +55,6 @@ class DVAPI RasterSelection final : public TSelection {
   bool m_isPastedSelection;
   bool m_noAntialiasing;
 
-  bool m_createdFrame;
-  bool m_createdLevel;
-  bool m_renumberedLevel;
-
 private:
   bool pasteSelection(const RasterImageData *data);
 
@@ -104,10 +100,6 @@ public:
   void setNoAntialiasing(bool value) { m_noAntialiasing = value; }
 
   bool isPastedSelection() const { return m_isPastedSelection; }
-
-  bool wasFrameCreated() const { return m_createdFrame; }
-  bool wasLevelCreated() const { return m_createdLevel; }
-  bool wasLevelRenumbered() const { return m_renumberedLevel; }
 
   /*! Returns strokes bounding box.*/
   TRectD getStrokesBound(std::vector<TStroke> strokes) const;

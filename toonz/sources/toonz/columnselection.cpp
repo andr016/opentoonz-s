@@ -21,7 +21,6 @@
 #include "orientation.h"
 #include "toonz/preferences.h"
 #include "toonz/txshchildlevel.h"
-#include "toonz/tcolumnhandle.h"
 
 // TnzCore includes
 #include "tvectorimage.h"
@@ -190,22 +189,12 @@ void TColumnSelection::cutColumns() {
 //-----------------------------------------------------------------------------
 
 void TColumnSelection::insertColumns() {
-  if (m_indices.empty()) {
-    int col = TApp::instance()->getCurrentColumn()->getColumnIndex();
-    if (col < 0) return;
-    selectColumn(col, true);
-  }
   ColumnCmd::insertEmptyColumns(m_indices);
 }
 
 //-----------------------------------------------------------------------------
 
 void TColumnSelection::insertColumnsAbove() {
-  if (m_indices.empty()) {
-    int col = TApp::instance()->getCurrentColumn()->getColumnIndex();
-    if (col < 0) return;
-    selectColumn(col, true);
-  }
   ColumnCmd::insertEmptyColumns(m_indices, true);
 }
 

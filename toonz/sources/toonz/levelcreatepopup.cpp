@@ -45,7 +45,6 @@
 #include "tvectorimage.h"
 #include "trasterimage.h"
 #include "ttoonzimage.h"
-#include "tmetaimage.h"
 #include "timagecache.h"
 #include "tundo.h"
 #include "filebrowsermodel.h"
@@ -197,7 +196,6 @@ LevelCreatePopup::LevelCreatePopup()
   m_levelTypeOm->addItem(tr("Toonz Raster Level"), (int)TZP_XSHLEVEL);
   m_levelTypeOm->addItem(tr("Raster Level"), (int)OVL_XSHLEVEL);
   m_levelTypeOm->addItem(tr("Scan Level"), (int)TZI_XSHLEVEL);
-  m_levelTypeOm->addItem(tr("Assistants Level"), (int)META_XSHLEVEL);
 
   if (Preferences::instance()->getUnits() == "pixel") {
     m_widthFld->setMeasure("camera.lx");
@@ -633,8 +631,6 @@ bool LevelCreatePopup::apply() {
     TFrameId fid(i);
     if (lType == PLI_XSHLEVEL)
       sl->setFrame(fid, new TVectorImage());
-    else if (lType == META_XSHLEVEL)
-      sl->setFrame(fid, new TMetaImage());
     else if (lType == TZP_XSHLEVEL) {
       TRasterCM32P raster(xres, yres);
       raster->fill(TPixelCM32());

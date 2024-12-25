@@ -89,11 +89,6 @@ public:
   void adjustLevel(cv::Mat& image);
   void binarize(cv::Mat& image);
 
-  // for saving / loading default
-  void getValues(int& black, int& white, int& threshold, double& gamma);
-  void setValues(const int black, const int white, const int threshold,
-                 const double gamma, const bool color_grayscale);
-
 protected slots:
   void onHistogramValueChanged(int itemId);
   void onFieldChanged();

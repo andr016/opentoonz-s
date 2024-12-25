@@ -1979,7 +1979,7 @@ void BrushToolOptionsBox::filterControls() {
        it != m_labels.end(); it++) {
     bool isModifier = (it.key().substr(0, 8) == "Modifier");
     bool isCommon   = (it.key() == "Lock Alpha" || it.key() == "Pressure" ||
-                     it.key() == "Assistants" || it.key() == "Preset:");
+                     it.key() == "Preset:");
     bool visible    = isCommon || (isModifier == showModifiers);
     it.value()->setVisible(visible);
   }
@@ -1988,7 +1988,7 @@ void BrushToolOptionsBox::filterControls() {
        it != m_controls.end(); it++) {
     bool isModifier = (it.key().substr(0, 8) == "Modifier");
     bool isCommon   = (it.key() == "Lock Alpha" || it.key() == "Pressure" ||
-                     it.key() == "Assistants" || it.key() == "Preset:");
+                     it.key() == "Preset:");
     bool visible    = isCommon || (isModifier == showModifiers);
     if (QWidget *widget = dynamic_cast<QWidget *>(it.value()))
       widget->setVisible(visible);
@@ -2845,27 +2845,26 @@ ToolOptions::~ToolOptions() {}
 
 void ToolOptions::showEvent(QShowEvent *) {
   TTool::Application *app = TTool::getApplication();
-
-  if (ToolHandle *currTool = app->getCurrentTool()) {
-    currTool->disconnect(this);
+  ToolHandle *currTool    = app->getCurrentTool();
+  if (currTool) {
     onToolSwitched();
     connect(currTool, SIGNAL(toolSwitched()), SLOT(onToolSwitched()));
-    connect(currTool, SIGNAL(toolOptionsBoxChanged()),
-            SLOT(onToolOptionsBoxChanged()));
     connect(currTool, SIGNAL(toolChanged()), SLOT(onToolChanged()));
   }
 
-  if (TObjectHandle *currObject = app->getCurrentObject()) {
+  TObjectHandle *currObject = app->getCurrentObject();
+  if (currObject) {
     onStageObjectChange();
     connect(currObject, SIGNAL(objectSwitched()), SLOT(onStageObjectChange()));
     connect(currObject, SIGNAL(objectChanged(bool)),
             SLOT(onStageObjectChange()));
   }
 
-  if (TXshLevelHandle *currLevel = app->getCurrentLevel()) {
+  TXshLevelHandle *currLevel = app->getCurrentLevel();
+
+  if (currLevel)
     connect(currLevel, SIGNAL(xshLevelSwitched(TXshLevel *)), this,
             SLOT(onStageObjectChange()));
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -2880,19 +2879,6 @@ void ToolOptions::hideEvent(QShowEvent *) {
 
   TXshLevelHandle *currLevel = app->getCurrentLevel();
   if (currLevel) currLevel->disconnect(this);
-}
-
-//-----------------------------------------------------------------------------
-// used for altering assistant tool options
-void ToolOptions::onToolOptionsBoxChanged() {
-  TTool *tool = TTool::getApplication()->getCurrentTool()->getTool();
-  std::map<TTool *, ToolOptionsBox *>::iterator it = m_panels.find(tool);
-  if (it != m_panels.end()) {
-    ToolOptionsBox *panel = it->second;
-    m_panels.erase(it);
-    layout()->removeWidget(panel);
-  }
-  onToolSwitched();
 }
 
 //-----------------------------------------------------------------------------

@@ -519,9 +519,10 @@ bool XdtsIo::loadXdtsScene(ToonzScene *scene, const TFilePath &scenePath) {
 
   scene->clear();
 
-  auto sceneProject = TProjectManager::instance()->loadSceneProject(scenePath);
+  TProjectManager *pm    = TProjectManager::instance();
+  TProjectP sceneProject = pm->loadSceneProject(scenePath);
   if (!sceneProject) return false;
-  scene->setProject(sceneProject);
+  scene->setProject(sceneProject.getPointer());
   std::string sceneFileName = scenePath.getName() + ".tnz";
   scene->setScenePath(scenePath.getParentDir() + sceneFileName);
   // set the current scene here in order to use $scenefolder node properly

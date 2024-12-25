@@ -218,11 +218,11 @@ TFilePath StudioPalette::getLevelPalettesRoot() {
 //-------------------------------------------------------------------
 
 TFilePath StudioPalette::getProjectPalettesRoot() {
-  auto project = TProjectManager::instance()->getCurrentProject();
-  TFilePath folderName = project->getFolder(TProject::Palettes);
+  TProjectP p          = TProjectManager::instance()->getCurrentProject();
+  TFilePath folderName = p->getFolder(TProject::Palettes);
   if (folderName.isEmpty()) return TFilePath();
   if (folderName.isAbsolute()) return folderName;
-  return project->getProjectFolder() + folderName;
+  return p->getProjectFolder() + folderName;
 }
 
 //-------------------------------------------------------------------

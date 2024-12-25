@@ -24,7 +24,6 @@
         <separator/>
         <menu title="Import">
             <command>MI_ImportMagpieFile</command>
-            <command>MI_ImportOCA</command>
         </menu>
         <menu title="Export">
             <command>MI_ExportCurrentScene</command>		

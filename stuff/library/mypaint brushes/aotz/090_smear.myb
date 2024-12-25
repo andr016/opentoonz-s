@@ -152,7 +152,7 @@
             "inputs": {}
         }, 
         "radius_logarithmic": {
-            "base_value": 2.25, 
+            "base_value": 2.99, 
             "inputs": {}
         }, 
         "restore_color": {

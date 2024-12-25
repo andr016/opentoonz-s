@@ -53,13 +53,12 @@ TEnv::IntVar FrameDisplayStyleInXsheetRowArea(
 namespace XsheetGUI {
 //-----------------------------------------------------------------------------
 
-const int ColumnWidth       = 74;
-const int RowHeight         = 20;
-const int SCROLLBAR_WIDTH   = 16;
-const int TOOLBAR_HEIGHT    = 29;
-const int BREADCRUMB_HEIGHT = 29;
-const int ZOOM_FACTOR_MAX   = 100;
-const int ZOOM_FACTOR_MIN   = 20;
+const int ColumnWidth     = 74;
+const int RowHeight       = 20;
+const int SCROLLBAR_WIDTH = 16;
+const int TOOLBAR_HEIGHT  = 29;
+const int ZOOM_FACTOR_MAX = 100;
+const int ZOOM_FACTOR_MIN = 20;
 }  // namespace XsheetGUI
 
 //=============================================================================
@@ -120,11 +119,6 @@ void XsheetViewer::getCellTypeAndColors(int &ltype, QColor &cellColor,
           (isSelected) ? getSelectedMeshColumnColor() : getMeshColumnColor();
       sideColor = getMeshColumnBorderColor();
       break;
-    case META_XSHLEVEL:
-      cellColor =
-          (isSelected) ? getSelectedMetaColumnColor() : getMetaColumnColor();
-      sideColor = getMetaColumnBorderColor();
-      break;
     case UNKNOWN_XSHLEVEL:
     case NO_XSHLEVEL:
     default:
@@ -159,66 +153,60 @@ void XsheetViewer::getColumnColor(QColor &color, QColor &sideColor, int index,
 //-----------------------------------------------------------------------------
 
 void XsheetViewer::getButton(const int &btype, QColor &bgColor,
-                             QString &svgIconPath, bool isTimeline) {
+                             QImage &iconImage, bool isTimeline) {
   switch (btype) {
   case PREVIEW_ON_XSHBUTTON:
     bgColor   = (isTimeline) ? getTimelinePreviewButtonBgOnColor()
                              : getXsheetPreviewButtonBgOnColor();
-    svgIconPath = (isTimeline) ? getTimelinePreviewButtonOnImage()
+    iconImage = (isTimeline) ? getTimelinePreviewButtonOnImage()
                              : getXsheetPreviewButtonOnImage();
     break;
   case PREVIEW_OFF_XSHBUTTON:
     bgColor   = (isTimeline) ? getTimelinePreviewButtonBgOffColor()
                              : getXsheetPreviewButtonBgOffColor();
-    svgIconPath = (isTimeline) ? getTimelinePreviewButtonOffImage()
+    iconImage = (isTimeline) ? getTimelinePreviewButtonOffImage()
                              : getXsheetPreviewButtonOffImage();
     break;
   case CAMSTAND_ON_XSHBUTTON:
     bgColor   = (isTimeline) ? getTimelineCamstandButtonBgOnColor()
                              : getXsheetCamstandButtonBgOnColor();
-    svgIconPath = (isTimeline) ? getTimelineCamstandButtonOnImage()
+    iconImage = (isTimeline) ? getTimelineCamstandButtonOnImage()
                              : getXsheetCamstandButtonOnImage();
     break;
   case CAMSTAND_TRANSP_XSHBUTTON:
     bgColor   = (isTimeline) ? getTimelineCamstandButtonBgOnColor()
                              : getXsheetCamstandButtonBgOnColor();
-    svgIconPath = (isTimeline) ? getTimelineCamstandButtonTranspImage()
+    iconImage = (isTimeline) ? getTimelineCamstandButtonTranspImage()
                              : getXsheetCamstandButtonTranspImage();
     break;
   case CAMSTAND_OFF_XSHBUTTON:
     bgColor   = (isTimeline) ? getTimelineCamstandButtonBgOffColor()
                              : getXsheetCamstandButtonBgOffColor();
-    svgIconPath = (isTimeline) ? getTimelineCamstandButtonOffImage()
+    iconImage = (isTimeline) ? getTimelineCamstandButtonOffImage()
                              : getXsheetCamstandButtonOffImage();
     break;
   case LOCK_ON_XSHBUTTON:
     bgColor   = (isTimeline) ? getTimelineLockButtonBgOnColor()
                              : getXsheetLockButtonBgOnColor();
-    svgIconPath = (isTimeline) ? getTimelineLockButtonOnImage()
+    iconImage = (isTimeline) ? getTimelineLockButtonOnImage()
                              : getXsheetLockButtonOnImage();
     break;
   case LOCK_OFF_XSHBUTTON:
     bgColor   = (isTimeline) ? getTimelineLockButtonBgOffColor()
                              : getXsheetLockButtonBgOffColor();
-    svgIconPath = (isTimeline) ? getTimelineLockButtonOffImage()
+    iconImage = (isTimeline) ? getTimelineLockButtonOffImage()
                              : getXsheetLockButtonOffImage();
     break;
   case CONFIG_XSHBUTTON:
     bgColor   = (isTimeline) ? getTimelineConfigButtonBgColor()
                              : getXsheetConfigButtonBgColor();
-    svgIconPath = (isTimeline) ? getTimelineConfigButtonImage()
+    iconImage = (isTimeline) ? getTimelineConfigButtonImage()
                              : getXsheetConfigButtonImage();
-    break;
-  case UNIFIED_TRANSP_XSHBUTTON:
-    bgColor   = (isTimeline) ? getTimelinePreviewButtonBgOnColor()
-                             : getXsheetPreviewButtonBgOnColor();
-    svgIconPath = (isTimeline) ? getTimelineUnifiedButtonTranspImage()
-                             : getXsheetUnifiedButtonTranspImage();
     break;
   default:
     bgColor = grey210;
     static QImage iconignored;
-    svgIconPath = "";
+    iconImage = iconignored;
   }
 }
 
@@ -239,7 +227,7 @@ XsheetViewer::XsheetViewer(QWidget *parent, Qt::WindowFlags flags)
     , m_isCurrentColumnSwitched(false)
     , m_isComputingSize(false)
     , m_currentNoteIndex(0)
-    , m_qtModifiers(Qt::KeyboardModifiers())
+    , m_qtModifiers(0)
     , m_frameDisplayStyle(to_enum(FrameDisplayStyleInXsheetRowArea))
     , m_orientation(nullptr)
     , m_xsheetLayout("Classic")
@@ -259,14 +247,8 @@ XsheetViewer::XsheetViewer(QWidget *parent, Qt::WindowFlags flags)
   m_toolbarScrollArea = new XsheetScrollArea(this);
   m_toolbarScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   m_toolbarScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_toolbar = new XsheetGUI::XSheetToolbar(this, Qt::WindowFlags(), true);
+  m_toolbar = new XsheetGUI::XSheetToolbar(this, 0, true);
   m_toolbarScrollArea->setWidget(m_toolbar);
-
-  m_breadcrumbArea = new XsheetGUI::BreadcrumbArea(this, Qt::WindowFlags());
-  m_breadcrumbScrollArea = new XsheetScrollArea(this);
-  m_breadcrumbScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_breadcrumbScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_breadcrumbScrollArea->setWidget(m_breadcrumbArea);
 
   m_noteArea       = new XsheetGUI::NoteArea(this);
   m_noteScrollArea = new XsheetScrollArea(this);
@@ -429,32 +411,6 @@ void XsheetViewer::positionSections() {
     }
   } else {
     m_toolbar->showToolbar(false);
-    m_toolbarScrollArea->setGeometry(0, 0, 0, 0);
-  }
-
-  if (Preferences::instance()->isShowXsheetBreadcrumbsEnabled()) {
-    m_breadcrumbArea->showBreadcrumbs(true);
-    int w = visibleRegion().boundingRect().width();
-    if (o->isVerticalTimeline())
-      m_breadcrumbScrollArea->setGeometry(0, headerFrame.from(), w,
-                                          XsheetGUI::BREADCRUMB_HEIGHT);
-    else
-      m_breadcrumbScrollArea->setGeometry(0, headerLayer.from(), w,
-                                          XsheetGUI::BREADCRUMB_HEIGHT);
-    m_breadcrumbArea->setFixedWidth(w);
-    if (o->isVerticalTimeline()) {
-      headerFrame = headerFrame.adjusted(XsheetGUI::BREADCRUMB_HEIGHT,
-                                         XsheetGUI::BREADCRUMB_HEIGHT);
-      bodyFrame = bodyFrame.adjusted(XsheetGUI::BREADCRUMB_HEIGHT, 0);
-    } else {
-      headerLayer = headerLayer.adjusted(XsheetGUI::BREADCRUMB_HEIGHT,
-                                         XsheetGUI::BREADCRUMB_HEIGHT);
-      bodyLayer = bodyLayer.adjusted(XsheetGUI::BREADCRUMB_HEIGHT, 0);
-    }
-    m_breadcrumbArea->updateBreadcrumbs();
-  } else {
-    m_breadcrumbArea->showBreadcrumbs(false);
-    m_breadcrumbScrollArea->setGeometry(0, 0, 0, 0);
   }
 
   m_noteScrollArea->setGeometry(o->frameLayerRect(headerFrame, headerLayer));
@@ -735,7 +691,7 @@ void XsheetViewer::timerEvent(QTimerEvent *) {
   scroll(m_autoPanSpeed);
   if (!m_dragTool) return;
   QMouseEvent mouseEvent(QEvent::MouseMove, m_lastAutoPanPos - m_autoPanSpeed,
-                         Qt::NoButton, Qt::MouseButtons(), m_qtModifiers);
+                         Qt::NoButton, 0, m_qtModifiers);
   m_dragTool->onDrag(&mouseEvent);
   m_lastAutoPanPos += m_autoPanSpeed;
 }
@@ -1479,7 +1435,7 @@ void XsheetViewer::onXsheetChanged() {
 //-----------------------------------------------------------------------------
 
 void XsheetViewer::onPreferenceChanged(const QString &prefName) {
-  if (prefName == "XSheetToolbar" || prefName == "XsheetBreadcrumbs") {
+  if (prefName == "XSheetToolbar") {
     positionSections();
     refreshContentSize(0, 0);
   } else if (prefName == "XsheetCamera") {
@@ -1775,7 +1731,7 @@ void XsheetViewer::changeWindowTitle() {
   TApp *app         = TApp::instance();
   ToonzScene *scene = app->getCurrentScene()->getScene();
   if (!scene || !app->getCurrentFrame()->isEditingScene()) return;
-  auto project = scene->getProject();
+  TProject *project = scene->getProject();
   QString sceneName = QString::fromStdWString(scene->getSceneName());
   if (sceneName.isEmpty()) sceneName = tr("Untitled");
   if (app->getCurrentScene()->getDirtyFlag()) sceneName += QString("*");

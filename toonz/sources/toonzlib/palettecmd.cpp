@@ -39,6 +39,7 @@
 #include "tcg/boost/range_utility.h"
 
 // boost includes
+#include <boost/bind.hpp>
 #include <boost/range/counting_range.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/adaptor/filtered.hpp>
@@ -582,7 +583,8 @@ void PaletteCmd::eraseStyles(const std::set<TXshSimpleLevel *> &levels,
       tcg::substitute(
           levelImages.second,
           boost::counting_range(0, levelImages.first->getFrameCount()) |
-              boost::adaptors::transformed([&levelImages](int f){ return cloneImage(*levelImages.first, f); }));
+              boost::adaptors::transformed(boost::bind(
+                  cloneImage, boost::cref(*levelImages.first), _1)));
     }
 
     static void restoreImage(const TXshSimpleLevelP &level, int f,

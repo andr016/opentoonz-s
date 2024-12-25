@@ -101,8 +101,8 @@ veuillez essayer d&apos;augmenter le délai d&apos;attente de FFMPEG dans les pr
     </message>
     <message>
         <location filename="../../image/sgi/filesgi.cpp" line="1237"/>
-        <source>Endianness</source>
-        <translation>Endianness</translation>
+        <source>Endianess</source>
+        <translation>Endianess</translation>
     </message>
     <message>
         <location filename="../../image/sgi/filesgi.cpp" line="1238"/>

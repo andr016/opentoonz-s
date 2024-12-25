@@ -27,6 +27,9 @@
 #include <QColor>
 #include <QTextStream>
 
+// boost includes
+#include <boost/bind.hpp>
+
 //**********************************************************************************
 //    Local namespace  stuff
 //**********************************************************************************
@@ -581,12 +584,8 @@ void Preferences::definePreferenceItems() {
   define(shortcutCommandsWhileRenamingCellEnabled,
          "shortcutCommandsWhileRenamingCellEnabled", QMetaType::Bool, false);
   define(showXSheetToolbar, "showXSheetToolbar", QMetaType::Bool, true);
-  define(showXsheetBreadcrumbs, "showXsheetBreadcrumbs", QMetaType::Bool,
-         false);
   define(expandFunctionHeader, "expandFunctionHeader", QMetaType::Bool, false);
   define(showColumnNumbers, "showColumnNumbers", QMetaType::Bool, false);
-  define(unifyColumnVisibilityToggles, "unifyColumnVisibilityToggles",
-         QMetaType::Bool, false);
   define(parentColorsInXsheetColumn, "parentColorsInXsheetColumn",
          QMetaType::Bool, false);
   define(highlightLineEverySecond, "highlightLineEverySecond", QMetaType::Bool,
@@ -603,14 +602,6 @@ void Preferences::definePreferenceItems() {
          0);  // default
   define(showFrameNumberWithLetters, "showFrameNumberWithLetters",
          QMetaType::Bool, false);
-  // This option will do the following:
-  // - When setting a cell in the empty column, level name will be copied to the
-  // column name
-  // - Typing the cell without level name in the empty column will try to use a
-  // level with the same name as the column The behavior may be changed in the
-  // future development.
-  define(linkColumnNameWithLevel, "linkColumnNameWithLevel", QMetaType::Bool,
-         false);
 
   // Animation
   define(keyframeType, "keyframeType", QMetaType::Int, 2);  // Linear
@@ -1105,7 +1096,7 @@ int Preferences::levelFormatsCount() const {
 int Preferences::matchLevelFormat(const TFilePath &fp) const {
   LevelFormatVector::const_iterator lft =
       std::find_if(m_levelFormats.begin(), m_levelFormats.end(),
-                   [&fp](const LevelFormat &format) { return format.matches(fp); });
+                   boost::bind(&LevelFormat::matches, _1, boost::cref(fp)));
 
   return (lft != m_levelFormats.end()) ? lft - m_levelFormats.begin() : -1;
 }

@@ -256,9 +256,6 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  // Build icon map
-  ThemeManager::getInstance().buildIconPathsMap(":/icons");
-
   // Install signal handlers to catch crashes
   CrashHandler::install();
 
@@ -413,7 +410,6 @@ int main(int argc, char *argv[]) {
 #endif
 
 #ifdef _WIN32
-  // BUG_WORKAROUND: #20230627
   // This attribute is set to make menubar icon to be always (16 x devPixRatio).
   // Without this attribute the menu bar icon size becomes the same as tool bar
   // when Windows scale is in 125%. Currently hiding the menu bar icon is done
@@ -438,6 +434,11 @@ int main(int argc, char *argv[]) {
     assert(ret);
   }
 #endif
+
+  // Set icon theme search paths
+  QStringList themeSearchPathsList = {":/icons"};
+  QIcon::setThemeSearchPaths(themeSearchPathsList);
+  // qDebug() << "All icon theme search paths:" << QIcon::themeSearchPaths();
 
   // Set show icons in menus flag (use iconVisibleInMenu to disable selectively)
   QApplication::instance()->setAttribute(Qt::AA_DontShowIconsInMenus, false);
@@ -620,6 +621,11 @@ int main(int argc, char *argv[]) {
                      Qt::white);
   a.processEvents();
 
+  // Set default start icon theme
+  QIcon::setThemeName(Preferences::instance()->getIconTheme() ? "dark"
+                                                              : "light");
+  // qDebug() << "Icon theme name:" << QIcon::themeName();
+
   // stile
   QApplication::setStyle("windows");
 
@@ -664,8 +670,8 @@ int main(int argc, char *argv[]) {
     // load script
     if (TFileStatus(loadFilePath).doesExist()) {
       // find project for this script file
-      TProjectManager *pm = TProjectManager::instance();
-      auto sceneProject = pm->loadSceneProject(loadFilePath);
+      TProjectManager *pm    = TProjectManager::instance();
+      TProjectP sceneProject = pm->loadSceneProject(loadFilePath);
       TFilePath oldProjectPath;
       if (!sceneProject) {
         std::cerr << QObject::tr(

@@ -61,7 +61,7 @@ public:
     eFrameCount,
     eLevelCount,
     eOutputPath,
-    eEndianness,
+    eEndianess,
 
     // sound info
     eLength,
@@ -216,7 +216,7 @@ InfoViewerImp::InfoViewerImp()
   create(eFrameCount, QObject::tr("Number of Frames: "));
   create(eLevelCount, QObject::tr("Number of Levels: "));
   create(eOutputPath, QObject::tr("Output Path:      "));
-  create(eEndianness, QObject::tr("Endianness:      "));
+  create(eEndianess, QObject::tr("Endianess:      "));
 
   // sound info
   create(eLength, QObject::tr("Length:       "));
@@ -282,8 +282,6 @@ QString InfoViewerImp::getTypeString() {
     return "Audio File";
   else if (ext == "mesh")
     return "Toonz Mesh Level";
-  else if (ext == "tzm")
-    return "Toonz Meta Level";
   else if (ext == "pic")
     return "Pic File";
   else if (Tiio::makeReader(ext.toStdString()))
@@ -369,7 +367,7 @@ void InfoViewerImp::setImageInfo() {
       setLabel(pg, eCodec, "Codec");
       setLabel(pg, eAlphaChannel, "Alpha Channel");
       setLabel(pg, eByteOrdering, "Byte Ordering");
-      setLabel(pg, eEndianness, "Endianness");
+      setLabel(pg, eEndianess, "Endianess");
     }
   } else
     m_separator1.hide();

@@ -24,6 +24,7 @@
 #include "tcg/boost/range_utility.h"
 
 // Boost includes
+#include <boost/bind.hpp>
 #include <boost/range/counting_range.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
@@ -62,7 +63,8 @@ void getSelectedFrames<TXshSimpleLevel>(
     if (!sl) continue;
 
     tcg::substitute(frames[sl], boost::counting_range(0, sl->getFrameCount()) |
-      boost::adaptors::transformed([&sl](int index){ return sl->getFrameId(index); }));
+                                    boost::adaptors::transformed(boost::bind(
+                                        &TXshSimpleLevel::getFrameId, sl, _1)));
   }
 }
 
