@@ -244,7 +244,17 @@ commandline += " -id " + task->m_id;*/
   }
 
   process->setProgram(task->getCommandLinePrgName());
-  process->setArguments(task->getCommandLineArgumentsList());
+#if defined(_WIN32)
+  process->setNativeArguments(task->getCommandLineArguments());
+#else
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  process->setArguments(
+      task->getCommandLineArguments().split(" ", Qt::SkipEmptyParts));
+#else
+  process->setArguments(
+      task->getCommandLineArguments().split(" ", QString::SkipEmptyParts));
+#endif
+#endif
   process->start();
   process->waitForFinished(-1);
 

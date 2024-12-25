@@ -19,7 +19,6 @@
 // forward declarations
 class TLevelColumnFx;
 class TXshCell;
-class TXshLevel;
 
 //=============================================================================
 //! The TXshLevelColumn class provides a column of levels in xsheet and allows
@@ -87,8 +86,7 @@ Return \b TFx.
   TFx *getFx() const override;
 
   // Used in TCellData::getNumbers
-  bool setNumbers(int row, int rowCount, const TXshCell cells[],
-                  TXshLevel *reservedLevel);
+  bool setNumbers(int row, int rowCount, const TXshCell cells[]);
 
 private:
   // not implemented

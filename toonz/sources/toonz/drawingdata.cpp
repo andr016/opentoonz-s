@@ -304,10 +304,11 @@ bool DrawingData::getLevelFrames(TXshSimpleLevel *sl,
   }
 
   // Merge Palette :
-  bool styleAdded = false;
+  TPalette *slPlt = sl->getPalette();
+  bool styleAdded = mergePalette_Overlap(slPlt, imgPlt, keepOriginalPalette);
+
   std::map<int, int> styleTable;
-  if (TPalette *slPlt = sl->getPalette()) {
-    styleAdded = mergePalette_Overlap(slPlt, imgPlt, keepOriginalPalette);
+  if (slPlt) {
     for (int s = 0; s < slPlt->getStyleCount(); s++) styleTable[s] = s;
   }
 

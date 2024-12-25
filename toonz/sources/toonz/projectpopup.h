@@ -131,8 +131,8 @@ public:
   // da TProjectManager::Listener
   void onProjectChanged() override {}
 
-  void updateProjectFromFields(std::shared_ptr<TProject>);
-  void updateFieldsFromProject(std::shared_ptr<TProject>);
+  void updateProjectFromFields(TProject *);
+  void updateFieldsFromProject(TProject *);
 
   void updateChooseProjectCombo();
 

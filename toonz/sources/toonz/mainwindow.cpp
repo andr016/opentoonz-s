@@ -456,8 +456,6 @@ centralWidget->setLayout(centralWidgetLayout);*/
   setCommandHandler("MI_NewRasterLevel", this,
                     &MainWindow::onNewRasterLevelButtonPressed);
   setCommandHandler(MI_ClearCacheFolder, this, &MainWindow::clearCacheFolder);
-  setCommandHandler("MI_NewMetaLevel", this,
-                    &MainWindow::onNewMetaLevelButtonPressed);
   // remove ffmpegCache if still exists from crashed exit
   QString ffmpegCachePath =
       ToonzFolder::getCacheRootFolder().getQString() + "//ffmpeg";
@@ -488,7 +486,7 @@ void MainWindow::changeWindowTitle() {
   ToonzScene *scene = app->getCurrentScene()->getScene();
   if (!scene) return;
 
-  auto project = scene->getProject();
+  TProject *project   = scene->getProject();
   QString projectName = QString::fromStdString(project->getName().getName());
 
   QString sceneName = QString::fromStdWString(scene->getSceneName());
@@ -934,26 +932,13 @@ Room *MainWindow::getCurrentRoom() const {
 //-----------------------------------------------------------------------------
 
 void MainWindow::onUndo() {
-  // Must wait for current save to finish, just in case
-  while (TApp::instance()->isSaveInProgress())
-    ;
-
-  ToolHandle *toolH = TApp::instance()->getCurrentTool();
-
-  // do not use undo if tool is currently in use
-  if (toolH->getTool()->isUndoable()) {
-    bool ret = TUndoManager::manager()->undo();
-    if (!ret) DVGui::error(QObject::tr("No more Undo operations available."));
-  }
+  bool ret = TUndoManager::manager()->undo();
+  if (!ret) DVGui::error(QObject::tr("No more Undo operations available."));
 }
 
 //-----------------------------------------------------------------------------
 
 void MainWindow::onRedo() {
-  // Must wait for current save to finish, just in case
-  while (TApp::instance()->isSaveInProgress())
-    ;
-
   bool ret = TUndoManager::manager()->redo();
   if (!ret) DVGui::error(QObject::tr("No more Redo operations available."));
 }
@@ -1421,7 +1406,6 @@ QAction *MainWindow::createAction(const char *id, const char *name,
   action->setIconVisibleInMenu(visible);
 #endif
 
-  // BUG_WORKAROUND: #20230627
   // In Qt5.15.2 - Windows, QMenu stylesheet has alignment issue when one item
   // has icon and another has not one. (See
   // https://bugreports.qt.io/browse/QTBUG-90242 for details.) To avoid the
@@ -1625,15 +1609,11 @@ QAction *MainWindow::createMiscAction(const char *id, const char *name,
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createToolOptionsAction(const char *id, const char *name,
-                                             const QString &defaultShortcut,
-                                             const char *iconSVGName) {
+                                             const QString &defaultShortcut) {
   QAction *action = new DVAction(tr(name), this);
-  if (iconSVGName && *iconSVGName)
-    action->setIcon(createQIcon(iconSVGName, false, true));
   addAction(action);
   CommandManager::instance()->define(id, ToolModifierCommandType,
-                                     defaultShortcut.toStdString(), action,
-                                     iconSVGName);
+                                     defaultShortcut.toStdString(), action);
   return action;
 }
 
@@ -1758,12 +1738,7 @@ void MainWindow::defineActions() {
       "");
   createMenuFileAction(
       MI_ExportOCA,
-      QT_TRANSLATE_NOOP("MainWindow", "Export Open Cel Animation (OCA)"), "",
-      "export_oca");
-  createMenuFileAction(
-      MI_ImportOCA,
-      QT_TRANSLATE_NOOP("MainWindow", "Import Open Cel Animation (OCA)"), "",
-      "import_oca");
+      QT_TRANSLATE_NOOP("MainWindow", "Export Open Cel Animation (OCA)"), "");
   createMenuFileAction(
       MI_ExportTvpJson,
       QT_TRANSLATE_NOOP("MainWindow", "Export TVPaint JSON File"), "");
@@ -1870,8 +1845,6 @@ void MainWindow::defineActions() {
                         "new_toonz_raster_level");
   createMenuLevelAction(MI_NewRasterLevel, QT_TR_NOOP("&New Raster Level"), "",
                         "new_raster_level");
-  createMenuFileAction(MI_NewMetaLevel, QT_TR_NOOP("&New Assistant Level"),
-                       "new_meta_level");
   createMenuLevelAction(MI_LoadLevel, QT_TR_NOOP("&Load Level..."), "",
                         "load_level");
   createMenuLevelAction(MI_SaveLevel, QT_TR_NOOP("&Save Level"), "",
@@ -1973,7 +1946,7 @@ void MainWindow::defineActions() {
   createMenuXsheetAction(MI_MergeColumns, QT_TR_NOOP("&Merge Levels"), "",
                          "merge_levels");
   createMenuXsheetAction(MI_InsertFx, QT_TR_NOOP("&New FX..."), "Ctrl+F",
-                         "fx_logo");
+                         "fx_new");
   createMenuXsheetAction(MI_NewOutputFx, QT_TR_NOOP("&New Output"), "Alt+O",
                          "output");
   createMenuXsheetAction(MI_InsertSceneFrame, QT_TR_NOOP("Insert Frame"), "",
@@ -2193,7 +2166,8 @@ void MainWindow::defineActions() {
   createMenuWindowsAction(MI_OpenFileBrowser, QT_TR_NOOP("&File Browser"), "",
                           "filebrowser");
   createMenuWindowsAction(MI_OpenPreproductionBoard,
-                          QT_TR_NOOP("&Preproduction Board"), "", "");
+                          QT_TR_NOOP("&Preproduction Board"), "",
+                          "scenebrowser");
   createMenuWindowsAction(MI_OpenFileViewer, QT_TR_NOOP("&Flipbook"), "",
                           "flipbook");
   createMenuWindowsAction(MI_OpenFunctionEditor, QT_TR_NOOP("&Function Editor"),
@@ -2322,9 +2296,6 @@ void MainWindow::defineActions() {
                              "view_file");
   createRightClickMenuAction(MI_ToggleXSheetToolbar,
                              QT_TR_NOOP("Toggle XSheet Toolbar"), "");
-  createRightClickMenuAction(MI_ToggleXsheetBreadcrumbs,
-                             QT_TR_NOOP("Toggle Sub-Xsheet Navigation Bar"), "",
-                             "toggle_sub_nav");
   createRightClickMenuAction(MI_ToggleXsheetCameraColumn,
                              QT_TR_NOOP("Show/Hide Xsheet Camera Column"), "");
   createRightClickMenuAction(MI_SetKeyframes, QT_TR_NOOP("&Set Key"), "Z",
@@ -2501,8 +2472,6 @@ void MainWindow::defineActions() {
   createToolAction(T_Plastic, "plastic", QT_TR_NOOP("Plastic Tool"), "X");
   createToolAction(T_Ruler, "ruler", QT_TR_NOOP("Ruler Tool"), "");
   createToolAction(T_Finger, "finger", QT_TR_NOOP("Finger Tool"), "");
-  createToolAction(T_EditAssistants, "assistant", QT_TR_NOOP("Edit Assistants"),
-                   "");
 
   /*-- Animate tool + mode switching shortcuts --*/
   createAction(MI_EditNextMode, QT_TR_NOOP("Animate Tool - Next Mode"), "",
@@ -2782,13 +2751,15 @@ void MainWindow::defineActions() {
   createToolOptionsAction("A_ToolOption_GeometricEdge",
                           QT_TR_NOOP("Geometric Edge"), "");
   createToolOptionsAction("A_ToolOption_Mode", QT_TR_NOOP("Mode"), "");
-  menuAct = createToolOptionsAction(
-      "A_ToolOption_Mode:Areas", QT_TR_NOOP("Mode - Areas"), "", "mode_areas");
-  menuAct = createToolOptionsAction(
-      "A_ToolOption_Mode:Lines", QT_TR_NOOP("Mode - Lines"), "", "mode_lines");
+  menuAct = createToolOptionsAction("A_ToolOption_Mode:Areas",
+                                    QT_TR_NOOP("Mode - Areas"), "");
+  menuAct->setIcon(createQIcon("mode_areas"));
+  menuAct = createToolOptionsAction("A_ToolOption_Mode:Lines",
+                                    QT_TR_NOOP("Mode - Lines"), "");
+  menuAct->setIcon(createQIcon("mode_lines"));
   menuAct = createToolOptionsAction("A_ToolOption_Mode:Lines & Areas",
-                                    QT_TR_NOOP("Mode - Lines && Areas"), "",
-                                    "mode_areas_lines");
+                                    QT_TR_NOOP("Mode - Lines && Areas"), "");
+  menuAct->setIcon(createQIcon("mode_areas_lines"));
   createToolOptionsAction("A_ToolOption_Mode:Endpoint to Endpoint",
                           QT_TR_NOOP("Mode - Endpoint to Endpoint"), "");
   createToolOptionsAction("A_ToolOption_Mode:Endpoint to Line",
@@ -2797,24 +2768,29 @@ void MainWindow::defineActions() {
                           QT_TR_NOOP("Mode - Line to Line"), "");
   createToolOptionsAction("A_ToolOption_Type", QT_TR_NOOP("Type"), "");
 
-  menuAct =
-      createToolOptionsAction("A_ToolOption_Type:Normal",
-                              QT_TR_NOOP("Type - Normal"), "", "type_normal");
+  menuAct = createToolOptionsAction("A_ToolOption_Type:Normal",
+                                    QT_TR_NOOP("Type - Normal"), "");
+  menuAct->setIcon(createQIcon("type_normal"));
+
   menuAct = createToolOptionsAction("A_ToolOption_Type:Rectangular",
-                                    QT_TR_NOOP("Type - Rectangular"), "F5",
-                                    "type_rectangular");
-  menuAct =
-      createToolOptionsAction("A_ToolOption_Type:Freehand",
-                              QT_TR_NOOP("Type - Freehand"), "", "type_lasso");
+                                    QT_TR_NOOP("Type - Rectangular"), "F5");
+  menuAct->setIcon(createQIcon("type_rectangular"));
+
+  menuAct = createToolOptionsAction("A_ToolOption_Type:Freehand",
+                                    QT_TR_NOOP("Type - Freehand"), "");
+  menuAct->setIcon(createQIcon("type_lasso"));
+
   menuAct = createToolOptionsAction("A_ToolOption_Type:Polyline",
-                                    QT_TR_NOOP("Type - Polyline"), "",
-                                    "type_polyline");
+                                    QT_TR_NOOP("Type - Polyline"), "");
+  menuAct->setIcon(createQIcon("type_polyline"));
+
   menuAct = createToolOptionsAction("A_ToolOption_Type:Freepick",
-                                    QT_TR_NOOP("Type - Pick+Freehand"), "",
-                                    "type_pickerlasso");
+                                    QT_TR_NOOP("Type - Pick+Freehand"), "");
+  menuAct->setIcon(createQIcon("type_pickerlasso"));
+
   menuAct = createToolOptionsAction("A_ToolOption_Type:Segment",
-                                    QT_TR_NOOP("Type - Segment"), "",
-                                    "type_erase_segment");
+                                    QT_TR_NOOP("Type - Segment"), "");
+  menuAct->setIcon(createQIcon("type_erase_segment"));
 
   createToolOptionsAction("A_ToolOption_TypeFont", QT_TR_NOOP("TypeTool Font"),
                           "");
@@ -2873,7 +2849,7 @@ void MainWindow::defineActions() {
   menuAct =
       createToolOptionsAction("A_ToolOption_AutopaintLines",
                               QT_TR_NOOP("Fill Tool - Autopaint Lines"), "");
-  menuAct->setIcon(createQIcon("toggle_autofill"));
+  menuAct->setIcon(createQIcon("fill_auto"));
 
   createToolOptionsAction("A_ToolOption_FlipHorizontal",
                           QT_TR_NOOP("Flip Selection/Object Horizontally"), "");
@@ -2930,9 +2906,9 @@ void MainWindow::defineActions() {
   createVisualizationButtonAction(
       VB_ActualPixelSize, QT_TR_NOOP("Actual Pixel Size"), "actual_pixel_size");
   createVisualizationButtonAction(
-      VB_FlipX, QT_TR_NOOP("Flip Viewer Horizontally"), "fliphoriz");
+      VB_FlipX, QT_TR_NOOP("Flip Viewer Horizontally"), "fliphoriz_off");
   createVisualizationButtonAction(
-      VB_FlipY, QT_TR_NOOP("Flip Viewer Vertically"), "flipvert");
+      VB_FlipY, QT_TR_NOOP("Flip Viewer Vertically"), "flipvert_off");
 
   // Misc
 
@@ -2945,6 +2921,7 @@ void MainWindow::defineActions() {
   menuAct =
       createMiscAction(MI_RefreshTree, QT_TR_NOOP("Refresh Folder Tree"), "");
   menuAct->setIconText(tr("Refresh"));
+  menuAct->setIcon(createQIcon("refresh", false, true));
   createMiscAction("A_FxSchematicToggle",
                    QT_TR_NOOP("Toggle FX/Stage schematic"), "");
 
@@ -3139,15 +3116,6 @@ void MainWindow::clearCacheFolder() {
           tr("Can't delete %1 : ").arg(fileToBeRemoved.getQString()));
     }
   }
-}
-
-//-----------------------------------------------------------------------------
-
-void MainWindow::onNewMetaLevelButtonPressed() {
-  int defaultLevelType = Preferences::instance()->getDefLevelType();
-  Preferences::instance()->setValue(DefLevelType, META_XSHLEVEL);
-  CommandManager::instance()->execute("MI_NewLevel");
-  Preferences::instance()->setValue(DefLevelType, defaultLevelType);
 }
 
 //-----------------------------------------------------------------------------

@@ -212,10 +212,6 @@ class DVAPI SchematicViewer final : public QWidget {
   QColor m_textColor;  // text color (black)
   Q_PROPERTY(QColor TextColor READ getTextColor WRITE setTextColor)
 
-  QColor m_passThroughTextColor;  // text outside of the node rect
-  Q_PROPERTY(QColor PassThroughTextColor READ getPassThroughTextColor WRITE
-                 setPassThroughTextColor)
-
   QColor m_verticalLineColor;
   Q_PROPERTY(QColor VerticalLineColor READ getVerticalLineColor WRITE
                  setVerticalLineColor)
@@ -276,11 +272,6 @@ class DVAPI SchematicViewer final : public QWidget {
   QColor m_meshColumnColor;
   Q_PROPERTY(
       QColor MeshColumnColor READ getMeshColumnColor WRITE setMeshColumnColor)
-
-  // Meta column
-  QColor m_metaColumnColor;
-  Q_PROPERTY(
-      QColor MetaColumnColor READ getMetaColumnColor WRITE setMetaColumnColor)
 
   // Reference column
   QColor m_referenceColumnColor;
@@ -395,11 +386,6 @@ public:
   void setTextColor(const QColor &color) { m_textColor = color; }
   QColor getTextColor() const { return m_textColor; }
 
-  void setPassThroughTextColor(const QColor &color) {
-    m_passThroughTextColor = color;
-  }
-  QColor getPassThroughTextColor() const { return m_passThroughTextColor; }
-
   void setVerticalLineColor(const QColor &color) {
     m_verticalLineColor = color;
   }
@@ -468,10 +454,6 @@ public:
   // Mesh column
   void setMeshColumnColor(const QColor &color) { m_meshColumnColor = color; }
   QColor getMeshColumnColor() const { return m_meshColumnColor; }
-
-  // Meta column
-  void setMetaColumnColor(const QColor &color) { m_metaColumnColor = color; }
-  QColor getMetaColumnColor() const { return m_metaColumnColor; }
 
   // Reference column
   QColor getReferenceColumnColor() const { return m_referenceColumnColor; }

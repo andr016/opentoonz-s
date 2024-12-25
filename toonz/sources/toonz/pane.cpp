@@ -34,7 +34,6 @@
 #include <QDesktopWidget>
 #include <QDialog>
 #include <QLineEdit>
-#include <QTextEdit>
 #include <QScreen>
 
 extern TEnv::StringVar EnvSafeAreaName;
@@ -124,8 +123,7 @@ void TPanel::enterEvent(QEvent *event) {
   if (w) {
     // grab the focus, unless a line-edit is focused currently
     QWidget *focusWidget = qApp->focusWidget();
-    if (focusWidget && (dynamic_cast<QLineEdit *>(focusWidget) ||
-                        dynamic_cast<QTextEdit *>(focusWidget))) {
+    if (focusWidget && dynamic_cast<QLineEdit *>(focusWidget)) {
       event->accept();
       return;
     }
@@ -239,13 +237,13 @@ void TPanel::zoomContentsAndFitGeometry(bool forward) {
 TPanelTitleBarButton::TPanelTitleBarButton(QWidget *parent,
                                            const QString &standardPixmapName)
     : QWidget(parent)
+    , m_standardPixmap(standardPixmapName)
     , m_standardPixmapName(standardPixmapName)
     , m_rollover(false)
     , m_pressed(false)
     , m_buttonSet(0)
     , m_id(0) {
-  updatePixmaps();
-  setFixedSize(m_onPixmap.size() / m_onPixmap.devicePixelRatio());
+  setFixedSize(m_standardPixmap.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -253,14 +251,12 @@ TPanelTitleBarButton::TPanelTitleBarButton(QWidget *parent,
 TPanelTitleBarButton::TPanelTitleBarButton(QWidget *parent,
                                            const QPixmap &standardPixmap)
     : QWidget(parent)
-    , m_onPixmap(standardPixmap)
-    , m_offPixmap(standardPixmap)
-    , m_overPixmap(standardPixmap)
+    , m_standardPixmap(standardPixmap)
     , m_rollover(false)
     , m_pressed(false)
     , m_buttonSet(0)
     , m_id(0) {
-  setFixedSize(m_onPixmap.size() / m_onPixmap.devicePixelRatio());
+  setFixedSize(m_standardPixmap.size() / m_standardPixmap.devicePixelRatio());
 }
 
 //-----------------------------------------------------------------------------
@@ -283,85 +279,26 @@ void TPanelTitleBarButton::setPressed(bool pressed) {
 
 //-----------------------------------------------------------------------------
 
-void TPanelTitleBarButton::setOverColor(const QColor &color) {
-  if (m_overColor != color) {
-    m_overColor = color;
-    updatePixmaps();
-  }
-}
-
-QColor TPanelTitleBarButton::getOverColor() const { return m_overColor; }
-
-//-----------------------------------------------------------------------------
-
-void TPanelTitleBarButton::setPressedColor(const QColor &color) {
-  if (m_pressedColor != color) {
-    m_pressedColor = color;
-    updatePixmaps();
-  }
-}
-
-QColor TPanelTitleBarButton::getPressedColor() const { return m_pressedColor; }
-
-//-----------------------------------------------------------------------------
-
-void TPanelTitleBarButton::setFreezeColor(const QColor &color) {
-  if (m_freezeColor != color) {
-    m_freezeColor = color;
-    updatePixmaps();
-  }
-}
-
-QColor TPanelTitleBarButton::getFreezeColor() const { return m_freezeColor; }
-
-//-----------------------------------------------------------------------------
-
-void TPanelTitleBarButton::setPreviewColor(const QColor &color) {
-  if (m_previewColor != color) {
-    m_previewColor = color;
-    updatePixmaps();
-  }
-}
-
-QColor TPanelTitleBarButton::getPreviewColor() const { return m_previewColor; }
-
-//-----------------------------------------------------------------------------
-
-void TPanelTitleBarButton::updatePixmaps() {
-  // Get background color used by some icons and states
-  QColor bgColor;
-  if (m_standardPixmapName.contains("freeze", Qt::CaseInsensitive)) {
-    bgColor = getFreezeColor();
-  } else if (m_standardPixmapName.contains("preview", Qt::CaseInsensitive)) {
-    bgColor = getPreviewColor();
-  } else {
-    bgColor = getPressedColor();
-  }
-
-  ThemeManager &themeManager = ThemeManager::getInstance();
-  const qreal offOpacity     = themeManager.getOffOpacity();
-
-  // Compute icon
-  QImage baseImg = svgToImage(m_standardPixmapName);
-  baseImg        = themeManager.recolorBlackPixels(baseImg);
-  QImage onImg   = compositeImage(baseImg, QSize(), false, bgColor);
-  QImage offImg  = adjustImageOpacity(baseImg, offOpacity);
-  QImage overImg = compositeImage(baseImg, QSize(), false, getOverColor());
-
-  // Store in member variables
-  m_onPixmap   = convertImageToPixmap(onImg);
-  m_offPixmap  = convertImageToPixmap(offImg);
-  m_overPixmap = convertImageToPixmap(overImg);
-}
-
-//-----------------------------------------------------------------------------
-
 void TPanelTitleBarButton::paintEvent(QPaintEvent *event) {
+  // Set unique pressed colors if filename contains the following words:
+  QColor bgColor = getPressedColor();
+  if (m_standardPixmapName.contains("freeze", Qt::CaseInsensitive))
+    bgColor = getFreezeColor();
+  if (m_standardPixmapName.contains("preview", Qt::CaseInsensitive))
+    bgColor = getPreviewColor();
+
+  QPixmap panePixmap    = recolorPixmap(svgToPixmap(m_standardPixmapName));
+  QPixmap panePixmapOff = compositePixmap(panePixmap, 0.8);
+  QPixmap panePixmapOver =
+      compositePixmap(panePixmap, 1, QSize(), 0, 0, getOverColor());
+  QPixmap panePixmapOn = compositePixmap(panePixmap, 1, QSize(), 0, 0, bgColor);
+
   QPainter painter(this);
   painter.drawPixmap(0, 0,
-                     m_pressed    ? m_onPixmap
-                     : m_rollover ? m_overPixmap
-                                  : m_offPixmap);
+                     m_pressed    ? panePixmapOn
+                     : m_rollover ? panePixmapOver
+                                  : panePixmapOff);
+  painter.end();
 }
 
 //-----------------------------------------------------------------------------
@@ -554,36 +491,11 @@ TPanelTitleBar::TPanelTitleBar(QWidget *parent,
     : QFrame(parent), m_closeButtonHighlighted(false) {
   setMouseTracking(true);
   setFocusPolicy(Qt::NoFocus);
-  generateCloseButtonPixmaps();
 }
 
 //-----------------------------------------------------------------------------
 
 QSize TPanelTitleBar::minimumSizeHint() const { return QSize(20, 18); }
-
-//-----------------------------------------------------------------------------
-
-void TPanelTitleBar::generateCloseButtonPixmaps() {
-  // Icon theme vars
-  ThemeManager &themeManager = ThemeManager::getInstance();
-  const qreal offOpacity     = themeManager.getOffOpacity();
-
-  // Use overColor from stylesheet for bgColor of rollover
-  QColor overColor = getOverColor();
-
-  // Generate base icon image
-  QImage baseImg = generateIconImage("pane_close");
-  baseImg        = compositeImage(baseImg, QSize(20, 18));
-
-  // Off icon image
-  QImage offImg = adjustImageOpacity(baseImg, offOpacity);
-
-  // Over icon image
-  QImage overImg = compositeImage(baseImg, QSize(), false, overColor);
-
-  m_closeButtonPixmap     = convertImageToPixmap(offImg);
-  m_closeButtonOverPixmap = convertImageToPixmap(overImg);
-}
 
 //-----------------------------------------------------------------------------
 
@@ -595,11 +507,18 @@ void TPanelTitleBar::paintEvent(QPaintEvent *) {
 
   TPanel *dw = qobject_cast<TPanel *>(parentWidget());
   Q_ASSERT(dw != 0);
-
-  if (!dw->isFloating()) {  // docked panel
+  // docked panel
+  if (!dw->isFloating()) {
     isPanelActive = dw->widgetInThisPanelIsFocused();
-  } else {                  // floating panel
+    qDrawBorderPixmap(&painter, rect, QMargins(3, 3, 3, 3),
+                      (isPanelActive) ? m_activeBorderPm : m_borderPm);
+  }
+  // floating panel
+  else {
     isPanelActive = isActiveWindow();
+    qDrawBorderPixmap(
+        &painter, rect, QMargins(3, 3, 3, 3),
+        (isPanelActive) ? m_floatActiveBorderPm : m_floatBorderPm);
   }
 
   if (dw->getOrientation() == TDockWidget::vertical) {
@@ -612,37 +531,21 @@ void TPanelTitleBar::paintEvent(QPaintEvent *) {
   }
 
   if (dw->isFloating()) {
-    QPoint closeButtonPos(rect.right() - 19, rect.top());
+    QIcon paneCloseIcon = createQIcon("pane_close");
+    const static QPixmap closeButtonPixmap(
+        paneCloseIcon.pixmap(20, 18, QIcon::Normal, QIcon::Off));
+    const static QPixmap closeButtonPixmapOver(
+        paneCloseIcon.pixmap(20, 18, QIcon::Active));
+
+    QPoint closeButtonPos(rect.right() - 20, rect.top());
 
     if (m_closeButtonHighlighted)
-      painter.drawPixmap(closeButtonPos, m_closeButtonOverPixmap);
+      painter.drawPixmap(closeButtonPos, closeButtonPixmapOver);
     else
-      painter.drawPixmap(closeButtonPos, m_closeButtonPixmap);
+      painter.drawPixmap(closeButtonPos, closeButtonPixmap);
   }
-}
 
-//-----------------------------------------------------------------------------
-
-void TPanelTitleBar::setOverColor(const QColor &color) {
-  if (m_overColor != color) {
-    m_overColor = color;
-    generateCloseButtonPixmaps();
-  }
-}
-
-QColor TPanelTitleBar::getOverColor() const { return m_overColor; }
-
-//-----------------------------------------------------------------------------
-
-void TPanelTitleBar::leaveEvent(QEvent *) {
-  TPanel *dw = qobject_cast<TPanel *>(parentWidget());
-  Q_ASSERT(dw != 0);
-
-  // Mouse left the widget, reset the highlighted flag
-  if (dw->isFloating()) {
-    m_closeButtonHighlighted = false;
-    update();
-  }
+  painter.end();
 }
 
 //-----------------------------------------------------------------------------

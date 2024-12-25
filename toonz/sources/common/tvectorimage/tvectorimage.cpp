@@ -2025,12 +2025,12 @@ void TVectorImage::Imp::printStrokes(std::ofstream &os) {
 
 //-----------------------------------------------------------------------------
 
-TStroke *TVectorImage::removeEndpoints(int strokeIndex, double *offset) {
-  return m_imp->removeEndpoints(strokeIndex, offset);
+TStroke *TVectorImage::removeEndpoints(int strokeIndex) {
+  return m_imp->removeEndpoints(strokeIndex);
 }
 
-void TVectorImage::restoreEndpoints(int index, TStroke *oldStroke, double offset) {
-  m_imp->restoreEndpoints(index, oldStroke, offset);
+void TVectorImage::restoreEndpoints(int index, TStroke *oldStroke) {
+  m_imp->restoreEndpoints(index, oldStroke);
 }
 
 //-----------------------------------------------------------------------------

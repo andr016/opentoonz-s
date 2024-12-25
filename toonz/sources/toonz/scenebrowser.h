@@ -43,7 +43,7 @@ class SceneBrowser final : public QFrame, public DvItemListModel {
   Q_OBJECT
 
 public:
-  SceneBrowser(QWidget *parent, Qt::WindowFlags flags = Qt::WindowFlags(),
+  SceneBrowser(QWidget *parent, Qt::WindowFlags flags = 0,
                bool noContextMenu = false, bool multiSelectionEnabled = false);
   ~SceneBrowser();
 

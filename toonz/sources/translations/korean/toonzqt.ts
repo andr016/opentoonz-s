@@ -2179,7 +2179,7 @@ Are you sure?</source>
         <translation>출력 경로: </translation>
     </message>
     <message>
-        <source>Endianness:      </source>
+        <source>Endianess:      </source>
         <translation>엔디언: </translation>
     </message>
     <message>

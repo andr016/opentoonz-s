@@ -59,7 +59,7 @@ const std::string
 //! Default project name
 const TFilePath TProject::SandboxProjectName("sandbox");
 
-std::shared_ptr<TProject> currentProject;
+TProjectP currentProject;
 
 //===================================================================
 
@@ -765,17 +765,6 @@ public:
         \note the tab mode is used for Tab Application
 */
 
-//-------------------------------------------------------------------
-void TProjectManager::getProjectRoots(std::vector<TFilePath> &projectRoots) {
-  for (TFilePath &path : m_projectsRoots) {
-    // Create project folders if not exist
-    if (!TFileStatus(path).isDirectory()) {
-      TSystem::mkDir(path);
-    }
-  }
-  projectRoots = m_projectsRoots;
-}
-
 TProjectManager::TProjectManager() : m_tabMode(false), m_tabKidsMode(false) {}
 
 //-------------------------------------------------------------------
@@ -973,7 +962,7 @@ void TProjectManager::getFolderNames(std::vector<std::string> &names) {
 void TProjectManager::setCurrentProjectPath(const TFilePath &fp) {
   assert(TProject::isAProjectPath(fp));
   currentProjectPath = ::to_string(fp.getWideString());
-  currentProject     = nullptr;// init this pointer in getCurrentProject()
+  currentProject     = TProjectP();
   notifyListeners();
 }
 
@@ -1005,11 +994,11 @@ TFilePath TProjectManager::getCurrentProjectPath() {
         If a current TProject() doesn't exist, load the project in the the
    current project path.
 */
-std::shared_ptr<TProject> TProjectManager::getCurrentProject() {
-  if (!currentProject) {
+TProjectP TProjectManager::getCurrentProject() {
+  if (currentProject.getPointer() == 0) {
     TFilePath fp = getCurrentProjectPath();
     assert(TProject::isAProjectPath(fp));
-    currentProject = std::make_shared<TProject>();
+    currentProject = new TProject();
     currentProject->load(fp);
 
     // update TFilePath condition on loading the current project
@@ -1027,7 +1016,7 @@ std::shared_ptr<TProject> TProjectManager::getCurrentProject() {
    folder of a project root.
         \note \b scenePath must be an absolute path.\n
         Creates a new TProject. The caller gets ownership.*/
-std::shared_ptr<TProject> TProjectManager::loadSceneProject(const TFilePath &scenePath) {
+TProjectP TProjectManager::loadSceneProject(const TFilePath &scenePath) {
   // cerca il file scenes.xml nella stessa directory della scena
   // oppure in una
   // directory superiore
@@ -1080,9 +1069,8 @@ std::shared_ptr<TProject> TProjectManager::loadSceneProject(const TFilePath &sce
   }
   if (!TFileStatus(projectPath).doesExist()) return 0;
 
-  auto project = std::make_shared<TProject>();
+  TProject *project = new TProject();
   project->load(projectPath);
-
   return project;
 }
 
@@ -1120,7 +1108,7 @@ void TProjectManager::removeListener(Listener *listener) {
         \see TSceneProperties
 */
 void TProjectManager::initializeScene(ToonzScene *scene) {
-  auto project = scene->getProject();
+  TProject *project       = scene->getProject();
   TSceneProperties *sprop = scene->getProperties();
 
   TFilePath currentProjectPath = getCurrentProjectPath();
@@ -1147,7 +1135,7 @@ void TProjectManager::saveTemplate(ToonzScene *scene) {
   // camera capture's "save in" path is saved in env, not in the project
   props.setCameraCaptureSaveInPath(TFilePath());
 
-  auto currentProject = getCurrentProject();
+  TProjectP currentProject = getCurrentProject();
   currentProject->setSceneProperties(props);
   currentProject->save();
 }
@@ -1157,7 +1145,7 @@ void TProjectManager::saveTemplate(ToonzScene *scene) {
 void TProjectManager::createSandboxIfNeeded() {
   TFilePath path = getSandboxProjectPath();
   if (!TFileStatus(path).doesExist()) {
-    auto project = createStandardProject();
+    TProjectP project = createStandardProject();
     try {
       project->save(path);
     } catch (...) {
@@ -1170,8 +1158,8 @@ void TProjectManager::createSandboxIfNeeded() {
         A standard project is a project containing the standard named and
    constant folder.
         \see TProject. */
-std::shared_ptr<TProject> TProjectManager::createStandardProject() {
-  auto project = std::make_shared<TProject>();
+TProjectP TProjectManager::createStandardProject() {
+  TProject *project = new TProject();
   // set default folders (+drawings, ecc.)
   std::vector<std::string> names;
   getFolderNames(names);

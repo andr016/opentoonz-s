@@ -165,7 +165,7 @@
             "inputs": {}
         },
         "opaque": {
-            "base_value": 1.25,
+            "base_value": 0.52,
             "inputs": {}
         },
         "opaque_linearize": {

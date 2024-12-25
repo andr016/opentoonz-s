@@ -288,7 +288,7 @@ static bool sh(std::string &out, const char *cmd) {
 
 static bool addr2line(std::string &out, const char *exepath, const char *addr) {
   char cmd[512];
-#ifdef MACOSX
+#ifdef OSX
   sprintf(cmd, "atos -o \"%.400s\" %s 2>&1", exepath, addr);
 #else
   sprintf(cmd, "addr2line -f -p -e \"%.400s\" %s 2>&1", exepath, addr);
@@ -576,10 +576,13 @@ bool CrashHandler::trigger(const QString reason, bool showDialog) {
   }
   try {
     if (s_reportProjInfo) {
-      auto currentProject = TProjectManager::instance()->getCurrentProject();
+      TProjectManager *pm = TProjectManager::instance();
+      TApp *app           = TApp::instance();
+
+      TProjectP currentProject = pm->getCurrentProject();
       TFilePath projectPath    = currentProject->getProjectPath();
 
-      ToonzScene *currentScene = TApp::instance()->getCurrentScene()->getScene();
+      ToonzScene *currentScene = app->getCurrentScene()->getScene();
       std::wstring sceneName   = currentScene->getSceneName();
 
       out.append("\nApplication Dir: ");

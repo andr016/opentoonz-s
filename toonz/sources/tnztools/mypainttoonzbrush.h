@@ -27,7 +27,7 @@ class Raster32PMyPaintSurface : public mypaint::Surface {
 private:
   class Internal;
 
-  TRaster32P ras;
+  TRaster32P m_ras;
   RasterController *controller;
   Internal *internal;
 
@@ -80,8 +80,6 @@ public:
 
   bool getAntialiasing() const;
   void setAntialiasing(bool value);
-
-  RasterController *getController() const { return controller; }
 };
 
 //=======================================================
@@ -95,20 +93,19 @@ private:
   struct Params {
     union {
       struct {
-        double x, y, pressure, tx, ty, time;
+        double x, y, pressure, time;
       };
       struct {
-        double values[6];
+        double values[4];
       };
     };
 
     inline explicit Params(double x = 0.0, double y = 0.0,
-                           double pressure = 0.0, double tx = 0.0,
-                           double ty = 0.0, double time = 0.0)
-        : x(x), y(y), pressure(pressure), tx(tx), ty(ty), time(time) {}
+                           double pressure = 0.0, double time = 0.0)
+        : x(x), y(y), pressure(pressure), time(time) {}
 
     inline void setMedian(Params &a, Params &b) {
-      for (int i = 0; i < (int)sizeof(values) / sizeof(values[0]); ++i)
+      for (int i  = 0; i < (int)sizeof(values) / sizeof(values[0]); ++i)
         values[i] = 0.5 * (a.values[i] + b.values[i]);
     }
   };
@@ -119,29 +116,21 @@ private:
 
   TRaster32P m_ras;
   Raster32PMyPaintSurface m_mypaintSurface;
-  mypaint::Brush m_brush;
+  mypaint::Brush brush;
 
-  bool m_reset;
-  Params m_previous, m_current;
-  bool m_interpolation;
+  bool reset;
+  Params previous, current;
 
 public:
   MyPaintToonzBrush(const TRaster32P &ras, RasterController &controller,
-                    const mypaint::Brush &brush, bool interpolation = false);
+                    const mypaint::Brush &brush);
   void beginStroke();
-  void strokeTo(const TPointD &position, double pressure, const TPointD &tilt,
-                double dtime);
   void endStroke();
+  void strokeTo(const TPointD &p, double pressure, double dtime);
 
   // colormapped
   void updateDrawing(const TRasterCM32P rasCM, const TRasterCM32P rasBackupCM,
                      const TRect &bbox, int styleId, bool lockAlpha) const;
-
-  const TRaster32P &getRaster() const { return m_ras; }
-  RasterController &getController() {
-    return *m_mypaintSurface.getController();
-  }
-  const mypaint::Brush &getBrush() const { return m_brush; }
 };
 
 #endif  // T_BLUREDBRUSH

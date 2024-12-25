@@ -135,7 +135,6 @@ public:
 
   QString getCommandLinePrgName() const;
   QString getCommandLineArguments() const;
-  QStringList getCommandLineArgumentsList() const;
   QString getCommandLine(bool isFarmTask = false) const;
   void parseCommandLine(QString commandLine);
 

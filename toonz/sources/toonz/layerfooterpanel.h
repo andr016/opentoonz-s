@@ -32,7 +32,7 @@ private:
 
 public:
   LayerFooterPanel(XsheetViewer *viewer, QWidget *parent = 0,
-                   Qt::WindowFlags flags = Qt::WindowFlags());
+                   Qt::WindowFlags flags = 0);
   ~LayerFooterPanel();
 
   void showOrHide(const Orientation *o);

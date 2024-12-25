@@ -2224,7 +2224,7 @@ y su tono puede notarse ligeramente discretizado.</translation>
         <translation>Ruta de salida: </translation>
     </message>
     <message>
-        <source>Endianness:      </source>
+        <source>Endianess:      </source>
         <translation>Orden:      </translation>
     </message>
     <message>

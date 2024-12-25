@@ -2167,7 +2167,7 @@ Are you sure?</source>
     </message>
     <message>
         <location filename="../../toonzqt/infoviewer.cpp" line="218"/>
-        <source>Endianness:      </source>
+        <source>Endianess:      </source>
         <translation type="unfinished"></translation>
     </message>
     <message>

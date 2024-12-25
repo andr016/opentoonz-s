@@ -4,7 +4,6 @@
 
 #include <tmathutil.h>
 #include <algorithm>
-#include <functional>
 
 using namespace std;
 

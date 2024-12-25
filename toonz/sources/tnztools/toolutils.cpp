@@ -451,8 +451,7 @@ TStroke *ToolUtils::merge(const ArrayOfStroke &a) {
 
 ToolUtils::TToolUndo::TToolUndo(TXshSimpleLevel *level, const TFrameId &frameId,
                                 bool createdFrame, bool createdLevel,
-                                const TPaletteP &oldPalette,
-                                bool renumberedLevel)
+                                const TPaletteP &oldPalette)
     : TUndo()
     , m_level(level)
     , m_frameId(frameId)
@@ -462,7 +461,7 @@ ToolUtils::TToolUndo::TToolUndo(TXshSimpleLevel *level, const TFrameId &frameId,
     , m_isEditingLevel(false)
     , m_createdFrame(createdFrame)
     , m_createdLevel(createdLevel)
-    , m_renumberedLevel(renumberedLevel)
+    , m_renumberedLevel(TTool::m_isLevelRenumbererd)
     , m_imageId("") {
   TTool::Application *app = TTool::getApplication();
   m_isEditingLevel        = app->getCurrentFrame()->isEditingLevel();
@@ -553,6 +552,7 @@ void ToolUtils::TToolUndo::removeLevelAndFrameIfNeeded() const {
         app->getCurrentScene()->notifyCastChange();
       }
     }
+    app->getCurrentLevel()->notifyLevelChange();
   }
   if (m_oldPalette.getPointer()) {
     m_level->getPalette()->assign(m_oldPalette->clone());
@@ -568,8 +568,6 @@ void ToolUtils::TToolUndo::removeLevelAndFrameIfNeeded() const {
     m_level->renumber(m_oldFids);
     app->getCurrentXsheet()->notifyXsheetChanged();
   }
-  if (m_createdFrame || m_createdLevel)
-    app->getCurrentLevel()->notifyLevelChange();
 }
 
 //------------------------------------------------------------------------------------------
@@ -1508,7 +1506,7 @@ void ToolUtils::drawBalloon(const TPointD &pos, std::string text,
                             const TPixel32 &color, TPoint delta,
                             double pixelSize, bool isPicking,
                             std::vector<TRectD> *otherBalloons) {
-  TToolViewer *viewer =
+  TTool::Viewer *viewer =
       TTool::getApplication()->getCurrentTool()->getTool()->getViewer();
   int devPixRatio = getDevicePixelRatio(viewer->viewerWidget());
   QString qText   = QString::fromStdString(text);
@@ -1652,7 +1650,7 @@ void ToolUtils::drawBalloon(const TPointD &pos, std::string text,
 
 void ToolUtils::drawHook(const TPointD &pos, ToolUtils::HookType type,
                          bool highlighted, bool onionSkin) {
-  TToolViewer *viewer =
+  TTool::Viewer *viewer =
       TTool::getApplication()->getCurrentTool()->getTool()->getViewer();
   int devPixRatio = getDevicePixelRatio(viewer->viewerWidget());
   int r = 10, d = r + r;
